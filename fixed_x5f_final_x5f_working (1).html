@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدير الأسماء — إدارة الأسماء والملفات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* الاستمارة كاملة من اليمين لليسار */
+html, body { direction: rtl !important; text-align: right !important; }
+* { direction: rtl; }
+input, select, textarea { direction: rtl !important; text-align: right !important; }
+table { direction: rtl !important; }
+th, td { direction: rtl !important; text-align: right !important; }
+.flex, .flex-row { flex-direction: row-reverse !important; }
+
+:root{--bg:#eef2f7;--card:#fff;--border:#e5e9f0;--text:#0f172a;--muted:#64748b;--sub:#94a3b8;--primary:#2563eb;--primary-h:#1d4ed8;--green:#10b981;--green-d:#059669;--orange:#f97316;--red:#dc2626;--purple:#8b5cf6;--amber:#f59e0b;--sidebar:#0f172a}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Cairo','Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+.app{display:flex;min-height:100vh}.sidebar{width:240px;background:var(--sidebar);color:#cbd5e1;display:flex;flex-direction:column;padding:18px 14px;position:sticky;top:0;height:100vh;flex-shrink:0}.brand{text-align:center}.logo{font-size:32px}.app-title{color:#fff;font-weight:800;font-size:17px;margin-top:2px}.app-sub{color:var(--sub);font-size:11px}.nav{display:flex;flex-direction:column;gap:5px;margin-top:16px}.nav button{background:transparent;border:none;color:#cbd5e1;text-align:right;cursor:pointer;padding:11px 14px;border-radius:99px;font:inherit;font-size:13px}.nav button:hover{background:#1e293b;color:#fff}.nav button.active{background:var(--primary);color:#fff;font-weight:700}.side-bottom{margin-top:auto;display:flex;flex-direction:column;gap:8px}.side-badge{background:#1e293b;color:#e2e8f0;border-radius:99px;padding:10px;font-size:12px;font-weight:700;text-align:center}.ver{text-align:center}
+.content{flex:1;display:flex;flex-direction:column;min-width:0}.topbar{background:#fff;border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}.page-title{font-size:18px;font-weight:800}.grow{flex:1}.date-lbl{color:var(--muted);font-size:12px}.pill{background:#dcfce7;color:#166534;border-radius:999px;padding:6px 14px;font-weight:700;font-size:12px;white-space:nowrap}.page{display:none;flex-direction:column;gap:12px;padding:16px 18px}.page.active{display:flex}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px}.cards{display:grid;gap:12px}.cards.four{grid-template-columns:repeat(4,1fr)}.stat-t{color:var(--muted);font-size:12px;font-weight:600}.stat-v{font-size:24px;font-weight:800;line-height:1.35}.stat-s{color:var(--sub);font-size:11px}.sec-title{font-size:15px;font-weight:800;margin-bottom:4px}.sub{color:var(--sub);font-size:12px}.mono{font-family:Consolas,monospace;direction:ltr;display:inline-block}.btn{background:#fff;border:1px solid #d7dce5;border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;color:var(--text)}.btn:hover{background:#f1f5f9}.btn.primary{background:var(--primary);color:#fff;border:none;font-weight:700}.btn.primary:hover{background:var(--primary-h)}.btn.success{background:var(--green-d);color:#fff;border:none;font-weight:700}.btn.success:hover{background:#047857}.btn.danger{background:var(--red);color:#fff;border:none;font-weight:700}.btn:disabled{opacity:.45;cursor:not-allowed}
+input,select{background:#fff;border:1px solid #d7dce5;border-radius:8px;padding:9px 10px;font:inherit;min-width:0}input:focus,select:focus{outline:none;border-color:var(--primary)}input:disabled,select:disabled{background:#f1f5f9}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.lbl{font-weight:700;font-size:12.5px;color:#334155}.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}.fgrid label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:12.5px;color:#334155}.m-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.grid-2{display:grid;grid-template-columns:1fr 1.6fr;gap:12px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px;background:#fff;max-height:60vh}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#f1f5f9;color:#334155;padding:9px 8px;font-weight:700;white-space:nowrap;border-bottom:1px solid var(--border);position:sticky;top:0}td{padding:8px;text-align:center;border-top:1px solid #eef2f7;white-space:nowrap}tbody tr:nth-child(even) td{background:#f8fafc}tbody tr:hover td{background:#eef4ff}tr.sel td{background:#dbeafe!important}tbody tr{cursor:pointer}.t-right{text-align:right}td.notes{max-width:240px;overflow:hidden;text-overflow:ellipsis}td.empty,.empty{padding:24px;text-align:center;color:var(--sub);white-space:normal}.st{display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:700}.st-done{background:#dcfce7;color:#166534}.st-inc{background:#ffedd5;color:#9a3412}.st-idle{background:#e2e8f0;color:#334155}
+.chart{display:flex;flex-direction:column;margin-top:6px}.cplot{position:relative;height:170px;margin-top:22px}.cbars{position:absolute;inset:0;display:flex;align-items:flex-end;gap:8px;padding:0 6px}.cbar{flex:1;max-width:44px;background:#3b82f6;border-radius:5px 5px 0 0;position:relative;min-height:2px}.cbar.today{background:var(--green)}.cbar b{position:absolute;top:-17px;left:0;right:0;text-align:center;font-size:10px;color:#334155;font-weight:700}.clbls{display:flex;gap:8px;padding:5px 6px 0}.clbl{flex:1;max-width:44px;text-align:center;font-size:10px;color:var(--muted)}.chart-empty{padding:40px;text-align:center;color:var(--sub)}
+.split{display:grid;grid-template-columns:1fr 1.8fr;gap:12px}.day-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:60vh;overflow:auto}.day-item{border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;background:#fff}.day-item:hover{background:#f8fafc}.day-item.sel{border-color:var(--primary);background:#eff6ff}.day-item .d1{font-weight:700;font-size:13px}.day-item .d2{color:var(--muted);font-size:12px;margin-top:2px}.tag-today{background:#dbeafe;color:#1d4ed8;font-size:10px;padding:1px 8px;border-radius:999px;margin-inline-start:6px;font-weight:700}
+.dist-row{display:flex;align-items:center;gap:10px;margin-top:10px}.dist-l{width:90px;font-weight:700;font-size:12.5px;color:#334155}.dist-bar{flex:1;height:12px;background:#eef2f7;border-radius:6px;overflow:hidden}.dist-bar i{display:block;height:100%;border-radius:6px}.dist-v{width:90px;font-size:12px;color:#334155;font-weight:700}.tips{margin:8px 18px 0 0;display:flex;flex-direction:column;gap:6px;color:#475569;font-size:12.5px}
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}.overlay.show{display:flex}.modal{background:#fff;border-radius:14px;width:100%;max-width:540px;padding:20px;max-height:90vh;overflow:auto}.modal h3{margin-bottom:10px;font-size:16px}.m-msg{white-space:pre-line;color:#334155;line-height:1.9}#toast{position:fixed;bottom:20px;inset-inline-start:20px;background:var(--green-d);color:#fff;padding:11px 16px;border-radius:10px;font-weight:700;z-index:60;display:none;box-shadow:0 8px 24px rgba(0,0,0,.18);max-width:420px}#toast.show{display:block}#toast.err{background:var(--red)}#ctx{position:fixed;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:6px;display:none;z-index:70;min-width:180px}#ctx button{display:block;width:100%;text-align:right;padding:8px 12px;background:none;border:none;border-radius:6px;cursor:pointer;font:inherit}#ctx button:hover{background:#eff6ff}#ctx hr{border:none;border-top:1px solid #eef2f7;margin:4px 6px}
+.auth-box{max-width:400px;margin:30px auto 0;display:flex;flex-direction:column;gap:12px}
+@media(max-width:960px){.cards.four{grid-template-columns:repeat(2,1fr)}.grid-2,.split{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}.sidebar{width:200px}}
+
+.login-gate{position:fixed;inset:0;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-card{background:#fff;border-radius:16px;padding:28px;width:92%;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-card h2{font-size:22px;font-weight:800;margin:8px 0 4px}
+.login-card .sub{color:#64748b;font-size:12px;margin-bottom:16px}
+.login-card input{width:100%;padding:12px;margin-bottom:10px;border:1px solid #d7dce5;border-radius:10px;font:inherit}
+.login-card .row{display:flex;gap:8px}
+.login-card .row button{flex:1;padding:12px;border-radius:10px;font-weight:700}
+.gate-msg{margin-top:12px;font-size:12px;min-height:18px;color:#dc2626}
+.family-badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;margin-inline-start:6px}
+.badge-wife{background:#fce7f3;color:#be185d}
+.badge-deceased{background:#fef3c7;color:#92400e}
+.badge-normal{background:#dcfce7;color:#166534}
+.member-card{border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px;background:#f8fafc;position:relative}
+.member-card.late{border-color:#f59e0b;background:#fffbeb}
+.member-card .m-head{font-weight:700;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+
+
+
+/* === ميزة البحث الذكي الجديدة - التمييز الدقيق === */
+.smart-results{position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #e5e9f0;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.15);z-index:30;max-height:65vh;overflow:auto;display:none}
+.smart-results.show{display:block}
+.sr-item{padding:10px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:10px;cursor:pointer}
+.sr-item:hover{background:#eff6ff}
+.sr-av{width:32px;height:32px;border-radius:99px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.sr-name{font-weight:800}
+.sr-meta{font-size:11px;color:#64748b;margin-top:2px;display:flex;gap:6px;flex-wrap:wrap}
+.badge{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:700;display:inline-block}
+.badge-fam{background:#e0e7ff;color:#3730a3}
+.badge-sim{background:#fef3c7;color:#92400e;border:1px dashed #f59e0b}
+.badge-rel{background:#dcfce7;color:#166534}
+.hl{background:#fef08a;padding:0 2px;border-radius:3px}
+.search-wrap{position:relative;flex:1;min-width:220px}
+
+
+/* مودال التأكيد والإضافة */
+#confirmOverlay,#quickAddOverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:10000;align-items:center;justify-content:center;padding:16px}
+#confirmOverlay.show,#quickAddOverlay.show{display:flex}
+.confirm-box,.quick-box{background:#fff;border-radius:16px;padding:22px 20px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.confirm-title,.quick-title{font-weight:800;font-size:18px;margin-bottom:12px;color:#0f172a;text-align:right}
+.confirm-msg{color:#334155;font-size:14px;line-height:1.7;text-align:right}
+.confirm-warn{color:#94a3b8;font-size:12px;margin-top:12px;text-align:right}
+.confirm-actions,.quick-actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-start;flex-direction:row-reverse}
+.btn-cancel-del{background:#fff;border:1px solid #d1d5db;border-radius:10px;padding:10px 18px;font-family:Cairo,sans-serif;font-weight:700;cursor:pointer;min-width:70px}
+.btn-delete-final{background:#dc2626;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-family:Cairo,sans-serif;font-weight:800;cursor:pointer;min-width:100px}
+.btn-save-quick{background:#0f172a;color:#fff;border:none;border-radius:10px;padding:10px 22px;font-family:Cairo,sans-serif;font-weight:800;cursor:pointer;min-width:100px}
+.quick-field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;text-align:right}
+.quick-field label{font-weight:700;font-size:12.5px;color:#334155}
+.quick-field input,.quick-field select{border:1px solid #d7dce5;border-radius:10px;padding:10px 12px;font-family:Cairo,sans-serif;font-size:14px}
+
+
+.form-header-box{background:#fff;border:2px solid #0f172a;border-radius:12px;padding:16px}
+.form-top-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-table-wrap{overflow:auto;border:2px solid #0f172a;border-radius:10px;background:#fff}
+.form-table-wrap table th{background:#0f172a;color:#fff;font-size:12px}
+.form-table-wrap table td{padding:6px}
+.form-table-wrap input,.form-table-wrap select{width:100%;padding:6px 8px;font-size:12px;border:1px solid #cbd5e1;border-radius:6px}
+.sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:24px;border-top:1px dashed #94a3b8;padding-top:16px}
+.sig-line{border-top:1px solid #0f172a;margin-top:50px;padding-top:6px;font-weight:700}
+@media print{ body *{ visibility:hidden !important; } #printArea, #printArea *{ visibility:visible !important; } #printArea{ position:absolute; left:0; top:0; width:100%; background:#fff; padding:20px; } .no-print{ display:none !important; } }
+
+</style>
+
+<style id="fix-full-interface">
+  /* الاستمارة تظهر داخل صفحة «الاستمارة» من القائمة الجانبية */
+  #page-form.active { display:flex !important; }
+  #page-form .form-page-shell { width:100%; }
+  #page-form .form-header-box {
+    background:#fff;
+    border:2px solid #0f172a;
+    border-radius:12px;
+    padding:16px;
+  }
+  #page-form .form-top-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  #page-form .f-lbl {
+    display:block;
+    font-weight:800;
+    font-size:12.5px;
+    color:#334155;
+    margin-bottom:6px;
+  }
+  #page-form .f-inp {
+    width:100%;
+    background:#fff;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+    padding:9px 10px;
+    font:inherit;
+    min-width:0;
+  }
+  #page-form .f-inp:focus { outline:none; border-color:#2563eb; }
+  #page-form .form-search-row {
+    grid-column:1/-1;
+    display:grid;
+    grid-template-columns:1fr 150px;
+    gap:8px;
+    margin-top:2px;
+    padding-top:12px;
+    border-top:1px dashed #cbd5e1;
+  }
+  #page-form .form-actions {
+    grid-column:1/-1;
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+    margin-top:2px;
+  }
+  #page-form .form-table-wrap {
+    overflow:auto;
+    border:2px solid #0f172a;
+    border-radius:10px;
+    background:#fff;
+    width:100%;
+    margin-top:12px;
+  }
+  #page-form .form-table-wrap table { min-width:820px; }
+  #page-form .form-table-wrap table th {
+    background:#0f172a;
+    color:#fff;
+    font-size:12px;
+    padding:9px 6px;
+  }
+  #page-form .form-table-wrap table td { padding:6px; }
+  #page-form .form-table-wrap small { font-weight:400; color:#cbd5e1; }
+  @media(max-width:960px) {
+    #page-form .form-top-grid { grid-template-columns:1fr; }
+    #page-form .form-search-row { grid-template-columns:1fr; }
+    #page-form .form-actions { justify-content:stretch; }
+    #page-form .form-actions .btn { flex:1; min-width:120px; }
+  }
+</style>
+
+</head>
+<body dir="rtl">
+
+<div class="login-gate" id="loginGate" style="display:flex">
+  <div class="login-card">
+    <div style="font-size:36px">👨‍👩‍👧‍👦</div>
+    <h2>مدير العوائل</h2>
+    <div class="sub">إدارة رب الأسرة وأفراد العائلة</div>
+    <input id="gateEmail" type="email" placeholder="البريد الإلكتروني">
+    <input id="gatePass" type="password" placeholder="كلمة المرور">
+    <div class="row">
+      <button class="btn success" id="gateSignup">إنشاء حساب</button>
+      <button class="btn primary" id="gateLogin">دخول</button>
+    </div>
+    <div id="gateMsg" class="gate-msg"></div>
+  </div>
+</div>
+
+<div class="app" style="display:none">
+<aside class="sidebar"><div class="brand"><div class="logo">👨‍👩‍👧‍👦</div><div class="app-title">مدير العوائل</div><div class="app-sub" id="orgLbl">إدارة العوائل وأفرادها</div></div><nav class="nav" id="nav"></nav><div class="side-bottom"><div class="side-badge" id="sideBadge"></div><button class="btn danger" id="btnLogoutSidebar" style="width:100%;margin-top:8px">🚪 تسجيل خروج</button><div class="app-sub ver" style="margin-top:6px">الإصدار 2.0 - مدير العوائل</div></div></aside>
+<main class="content">
+<header class="topbar"><div class="page-title" id="pageTitle">الرئيسية</div><div class="grow"></div><div class="date-lbl" id="dateLbl"></div><div class="pill" id="pill"></div><button class="btn danger" id="btnLogoutTop" style="padding:6px 12px;font-size:12px">🚪 خروج</button></header>
+<section class="page active" id="page-dashboard">
+<div class="cards four">
+<div class="card"><div class="stat-t">إجمالي الأسماء</div><div class="stat-v" id="sTotal" style="color:var(--primary)">0</div><div class="stat-s" id="sTotalSub">—</div></div>
+<div class="card"><div class="stat-t">إدخالات اليوم</div><div class="stat-v" id="sToday" style="color:var(--green)">0</div><div class="stat-s">إضافة غير محدودة — بدون حد يومي</div></div>
+<div class="card"><div class="stat-t">أيام التسجيل</div><div class="stat-v" id="sDays" style="color:var(--purple)">0</div><div class="stat-s">يوم به سجلات محفوظة</div></div>
+<div class="card"><div class="stat-t">إجمالي الملفات المنشأة</div><div class="stat-v" id="sFiles" style="color:var(--amber)">0</div><div class="stat-s">مجموع الملفات لكل السجلات</div></div>
+<div class="card"><div class="stat-t">مستكمل</div><div class="stat-v" id="sDone" style="color:var(--green-d)">0</div><div class="stat-s">—</div></div>
+<div class="card"><div class="stat-t">غير مستكمل</div><div class="stat-v" id="sNot" style="color:var(--orange)">0</div><div class="stat-s">—</div></div>
+<div class="card"><div class="stat-t">خامل</div><div class="stat-v" id="sIdle" style="color:var(--muted)">0</div><div class="stat-s">—</div></div>
+<div class="card"><div class="stat-t">متوسط الإدخال اليومي</div><div class="stat-v" id="sAvg" style="color:var(--primary)">0</div><div class="stat-s">اسم لكل يوم</div></div></div>
+<div class="grid-2"><div class="card"><div class="sec-title">آخر 7 أيام</div><div id="dashChart"></div></div>
+<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="sec-title">سجلات اليوم</div><div class="sub" id="dashTodaySub"></div></div>
+<div class="table-wrap" style="margin-top:8px"><table class="rec"><thead></thead><tbody id="dashTbody"></tbody></table></div></div></div>
+</section>
+<section class="page" id="page-add"><div class="card"><div class="sec-title">بيانات الاسم الجديد</div><div class="sub">لا يوجد حد يومي — يمكنك إضافة أي عدد من الأسماء في اليوم، وكل سجل يُحفظ تلقائيًا ويُربط بتاريخ ووقت تسجيله. <b id="addTodayLbl"></b></div><div class="fgrid">
+<label>اسم رب الأسرة *<input id="inName" placeholder="مثال: أحمد محمد عبدالله"></label>
+<label>نوع رب الأسرة *<select id="inHeadType"><option value="normal">👨 رب أسرة - زوج موجود</option><option value="deceased_husband">👩‍👧‍👦 زوج متوفي - باسم الزوجة</option><option value="separated">👩 زوجة مفصولة - باسم الزوجة</option></select></label>
+<label>الرقم<input id="inNumber" inputmode="numeric" placeholder="يُقترح تلقائيًا"></label>
+<label>رقم الزائر<input id="inVisitor" inputmode="numeric" placeholder="اختياري"></label>
+<label>عدد أفراد الأسرة الكلي *<input id="inFamilyCount" type="number" min="1" value="1" placeholder="مثلاً: 5 - يشمل رب الأسرة"><span class="sub">يشمل رب الأسرة + جميع الأفراد</span></label>
+<label>الحالة<select id="inStatus"><option>مستكمل</option><option>غير مستكمل</option><option>خامل</option></select></label>
+<label>عدد الملفات المنشأة<input id="inFiles" inputmode="numeric" value="1"></label>
+<label>الملاحظات<input id="inNotes" placeholder="اختياري"></label>
+</div>
+<div class="card" style="margin-top:10px;background:#f0f7ff;border-color:#bfdbfe">
+  <div class="sec-title">👥 إضافة أفراد العائلة مباشرة (اختياري)</div>
+  <div class="sub">يمكنك إضافة أفراد العائلة الآن أو لاحقاً بعد حفظ رب الأسرة بالضغط على اسمه</div>
+  <div id="quickMembers" style="margin-top:8px"></div>
+  <button class="btn" id="btnAddQuickMember" style="margin-top:8px">➕ إضافة فرد سريع</button>
+</div>
+<div class="sub" style="margin-top:10px;color:#7c3aed">💡 بعد حفظ رب الأسرة، اضغط على اسمه في سجل العوائل لإضافة أفراد العائلة</div><div class="m-actions"><button class="btn primary" id="btnAddSave">💾 حفظ السجل</button><button class="btn" id="btnAddClear">🧹 مسح الحقول</button></div></div></section>
+<section class="page" id="page-records"><div class="card" style="padding:10px 12px"><div class="toolbar"><div class="search-wrap" id="searchWrap"><input id="recSearch" class="grow" style="min-width:220px;width:100%" placeholder="🔎 بحث ذكي: اسم أي فرد في أي عائلة + تمييز التشابه"><div class="smart-results" id="smartResults"></div></div><select id="recStatus"><option value="">كل الحالات</option><option>مستكمل</option><option>غير مستكمل</option><option>خامل</option></select><select id="recMode"><option value="all">كل التواريخ</option><option value="day">يوم محدد</option><option value="month">شهر محدد</option></select><input type="date" id="recDay" style="display:none"><input type="month" id="recMonth" style="display:none"><button class="btn" id="recRefresh">🔄</button><button class="btn" id="recEdit">✏️ تعديل</button><button class="btn danger" id="recDelete">🗑️ حذف</button><button class="btn" id="recExport">📤</button></div></div><div class="sub" id="recCountLbl"></div><div class="table-wrap"><table class="rec" id="recTable"><thead></thead><tbody id="recTbody"></tbody></table></div><div class="sub">💡 اضغط على اسم رب الأسرة لفتح كل معلوماته وأفراد عائلته — نقرة مزدوجة للتعديل — زر الفأرة الأيمن لقائمة سريعة.</div></section>
+
+<section class="page" id="page-form">
+  <div id="printArea" class="form-page-shell">
+    <div class="form-header-box">
+      <div class="sec-title">📋 استمارة العائلة</div>
+      <div class="sub" style="margin-bottom:12px">أدخل بيانات العائلة ثم أضف أفرادها من الجدول أدناه.</div>
+
+      <div class="form-top-grid">
+        <div>
+          <span class="f-lbl">📅 تاريخ فتح السجل *</span>
+          <input id="fDate" type="date" class="f-inp">
+        </div>
+        <div>
+          <span class="f-lbl">🔢 رقم العائلة من سجل العائلة *</span>
+          <input id="fFamilyNo" class="f-inp" placeholder="من سجل العائلة">
+        </div>
+
+        <div style="grid-column:1/-1">
+          <span class="f-lbl">👨‍👩‍👧‍👦 اسم رب الأسرة الرباعي *</span>
+          <input id="fHeadName" class="f-inp" placeholder="الاسم الرباعي" style="background:#eff6ff;font-weight:700;border:2px solid #1e40af">
+        </div>
+
+        <div style="border:2px solid #059669;border-radius:10px;padding:8px;background:#f0fdf4">
+          <span class="f-lbl">🏠 عنوان السكن</span>
+          <input id="fAddress" class="f-inp" placeholder="بغداد - الكاظمية - محلة 401 زقاق 15 دار 12" style="border:2px solid #059669;background:#fff;font-weight:700">
+        </div>
+        <div style="border:1px solid #94a3b8;border-radius:10px;padding:8px;background:#fff">
+          <span class="f-lbl">📍 أقرب نقطة دالة</span>
+          <input id="fLandmark" class="f-inp" placeholder="قرب مسجد، مدرسة...">
+        </div>
+
+        <div>
+          <span class="f-lbl">📞 رقم الهاتف</span>
+          <input id="fPhone" class="f-inp" placeholder="07xx xxx xxxx">
+        </div>
+        <div>
+          <span class="f-lbl">👥 عدد أفراد الأسرة</span>
+          <input id="fCountDisplay" class="f-inp" readonly value="1" style="background:#f1f5f9">
+          <input id="fCount" type="hidden" value="1">
+        </div>
+
+        <div class="form-search-row">
+          <div>
+            <span class="f-lbl">🔍 ابحث عن العائلة</span>
+            <input id="fSearchInput" class="f-inp" placeholder="اكتب اسم العائلة أو الرقم...">
+            <input id="fSearch" type="hidden">
+          </div>
+          <div style="display:flex;align-items:end">
+            <button class="btn primary" id="btnOpenSearch" style="width:100%;padding:10px">📋 فتح الاستمارة</button>
+          </div>
+        </div>
+
+        <div class="form-actions no-print">
+          <button class="btn" onclick="clearForm()" style="background:#fff;border:1px solid #cbd5e1">🧹 مسح</button>
+          <button class="btn success" id="btnSaveForm" style="background:#16a34a;color:#fff">💾 حفظ</button>
+          <button class="btn primary" id="btnPrintForm">🖨️ طباعة</button>
+          <button class="btn" id="btnExportWord" onclick="exportFormToWord()" style="background:#2b579a;color:#fff;font-weight:700">📄 تصدير Word مرتب - ترتيب جديد</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px">ت</th>
+            <th>الاسم الرباعي</th>
+            <th style="width:90px">الجنس</th>
+            <th style="width:160px">المواليد <span dir="ltr">[Year | Month | Day]</span><br><small>السنة يسار ← الشهر وسط ← اليوم يمين</small></th>
+            <th style="width:140px">درجة التعلم</th>
+            <th style="width:140px">المهنة</th>
+            <th class="no-print" style="width:60px">حذف</th>
+          </tr>
+        </thead>
+        <tbody id="formTbody"></tbody>
+      </table>
+    </div>
+
+    <div class="m-actions no-print">
+      <button class="btn success" id="btnAddFormRow">➕ إضافة فرد</button>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="page-daily"><div class="sub">جميع الأيام محفوظة بشكل دائم ولا تُحذف أبدًا — اختر أي يوم لعرض سجلاته.</div><div class="split"><div class="card"><div class="sec-title">الأيام المسجلة</div><div class="sub" id="daysTotal"></div><div class="day-list" id="dayList"></div></div><div class="card"><div class="sec-title" id="dayTitle">اختر يومًا لعرض سجلاته</div><div class="sub" id="dayCount"></div><div class="table-wrap" style="margin-top:8px"><table class="rec"><thead></thead><tbody id="dayTbody"></tbody></table></div></div></div></section>
+<section class="page" id="page-stats"><div class="cards four"><div class="card"><div class="stat-t">متوسط الإدخال اليومي</div><div class="stat-v" id="stAvg" style="color:var(--primary)">0</div><div class="stat-s">اسم لكل يوم</div></div><div class="card"><div class="stat-t">أفضل يوم</div><div class="stat-v" id="stBest" style="color:var(--green)">—</div><div class="stat-s" id="stBestSub">—</div></div><div class="card"><div class="stat-t">أيام التسجيل</div><div class="stat-v" id="stDays" style="color:var(--purple)">0</div><div class="stat-s">يوم به سجلات محفوظة</div></div><div class="card"><div class="stat-t">إجمالي الملفات</div><div class="stat-v" id="stFiles" style="color:var(--amber)">0</div><div class="stat-s">—</div></div></div><div class="grid-2"><div class="card"><div class="sec-title">توزيع الحالات</div><div id="distBox"></div></div><div class="card"><div class="sec-title">آخر 14 يوم</div><div id="statsChart"></div></div></div><div class="card"><div class="sec-title">الملخص الشهري</div><div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>الشهر</th><th>عدد الأسماء</th><th>عدد الأيام</th><th>إجمالي الملفات المنشأة</th></tr></thead><tbody id="monthTbody"></tbody></table></div></div></section>
+<section class="page" id="page-export"><div class="card"><div class="sec-title">تصدير البيانات إلى Excel</div><div class="sub">يتم تصدير جميع الأعمدة مع صف عنوان واتجاه RTL. <b>جميع الأرقام في الملف تُكتب بالأرقام الإنجليزية (1 2 3)</b>. حقل «الرقم» و«رقم الزائر» يُحفظان كنص للحفاظ على الأصفار في البداية. إن لم تتوفر مكتبة Excel يتم التصدير بصيغة CSV متوافقة مع Excel.</div><div class="toolbar" style="margin-top:12px"><span class="lbl">نطاق التصدير:</span><select id="expScope"><option value="all">كل السجلات</option><option value="day">سجلات يوم محدد</option><option value="month">سجلات شهر محدد</option><option value="status">حسب الحالة</option></select><input type="date" id="expDay" style="display:none"><input type="month" id="expMonth" style="display:none"><select id="expStatus" style="display:none"><option>مستكمل</option><option>غير مستكمل</option><option>خامل</option></select></div><div class="sub" id="expMatchLbl" style="margin-top:10px"></div><div class="m-actions"><button class="btn primary" id="btnExport">📤 تصدير إلى Excel</button></div></div></section>
+<section class="page" id="page-backup"><div class="card"><div class="sec-title">معلومات البيانات</div><div class="sub">تُحفظ البيانات محليًا تلقائيًا، ومع تفعيل Supabase تتم مزامنتها إلى السحابة فورًا. يُنصح بتنزيل نسخة احتياطية بشكل دوري.</div><div class="sub" id="bkInfo" style="margin-top:8px;line-height:2"></div><div class="m-actions"><button class="btn primary" id="btnBackupDl">💾 تنزيل نسخة احتياطية (JSON)</button><button class="btn success" id="btnBackupRestore">✅ استعادة من ملف</button><input type="file" id="bkFile" accept=".json,application/json" style="display:none"></div></div><div class="card"><div class="sec-title">إرشادات النسخ الاحتياطي</div><ul class="tips"><li>• النسخة الاحتياطية ملف JSON يحتوي جميع السجلات والإعدادات.</li><li>• الاستعادة تستبدل البيانات الحالية بمحتوى النسخة.</li><li>• البيانات محمية ومحفوظة، ولا توجد أي إمكانية للحذف التلقائي أو اليدوي.</li></ul></div></section>
+<section class="page" id="page-settings">
+<div class="card">
+<div class="sec-title">🔐 تسجيل الدخول الحساب السحابي</div>
+<div class="sub">سجل دخولك ليصلك ملفك الخاص وحسابك الشخصي فقط على جميع الأجهزة.</div>
+<div class="auth-box">
+<label class="lbl">البريد الإلكتروني<input id="authUser" type="email" placeholder="email@domain.com"></label>
+<label class="lbl">كلمة المرور<input id="authPass" type="password" placeholder="••••••••"></label>
+<div class="m-actions">
+<button class="btn primary" id="btnLogin">🔑 تسجيل الدخول</button>
+<button class="btn success" id="btnSignUp">📝 إنشاء حساب جديد</button>
+<button class="btn danger" id="btnLogout" style="display:none">🚪 تسجيل الخروج</button>
+</div>
+</div>
+</div>
+<div class="card"><div class="sec-title">☁️ ربط مشروع Supabase</div><div class="sub">أدخل رابط المشروع ومفتاح Anon/Publishable Key.</div><div class="fgrid"><label>رابط Supabase<input id="sbUrl" placeholder="https://xxxxx.supabase.co"></label><label>Anon / Publishable Key<input id="sbKey" type="password" placeholder="ضع المفتاح هنا"></label></div><div class="m-actions"><button class="btn primary" id="btnCloudSave">💾 حفظ إعدادات السحابة</button><button class="btn success" id="btnCloudTest">☁️ استرجاع بياناتي الخاصة</button></div><div class="sub" id="cloudState" style="margin-top:10px;font-weight:700"></div></div><div class="card"><div class="sec-title">اسم الجهة</div><div class="toolbar" style="margin-top:8px"><input id="setOrg" class="grow" placeholder="يظهر في الشريط الجانبي وفي ملفات Excel"><button class="btn primary" id="btnSetOrg">💾 حفظ</button></div></div><div class="card"><div class="sec-title">معلومات التطبيق</div><div class="sub" id="setInfo" style="margin-top:6px;line-height:2"></div></section>
+</main></div>
+<div class="overlay" id="overlay"><div class="modal" id="mBody"></div></div><div id="toast"></div><div id="ctx"></div>
+<script>
+const _uB64='aHR0cHM6Ly90bnRxY2RsbnlnYXR5YmFtanZodC5zdXBhYmFzZS5jbw=='; const _kB64='c2JfcHVibGlzaGFibGVfb00zVWNIMnROdzlvM3RId3QzbWNyd19JcFRBblBDZA=='; const SB_URL=atob(_uB64); const SB_KEY=atob(_kB64);
+const LS_KEY='namesManagerDB_v1',STATUSES=['مستكمل','غير مستكمل','خامل'],ST_CLS={'مستكمل':'st-done','غير مستكمل':'st-inc','خامل':'st-idle'},AR_DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],AR_MONTHS=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];let DB=loadDB(),selId=null,dailySel=null;
+
+function normalize(d){const s=d.settings||{},recs=(d.records||[]).map((r,i)=>({id:Number(r.id)||i+1,name:String(r.name||''),number:String(r.number??''),visitor:String(r.visitor??''),status:STATUSES.includes(r.status)?r.status:'مستكمل',files:Number(r.files)||0,notes:String(r.notes||''),date:r.date||todayISO(),time:r.time||'',landmark:String(r.landmark||''),phone:String(r.phone||''),headType:r.headType||'normal',familyMembers:Array.isArray(r.familyMembers)?r.familyMembers:[],totalFamilyCount:Number(r.totalFamilyCount)||0,familyCount:Number(r.familyCount)||0})).sort((a,b)=>a.id-b.id),nextId=recs.reduce((m,r)=>Math.max(m,r.id),0)+1;return{settings:{orgName:String(s.orgName||'')},records:recs,nextId}}
+function loadDB(){try{const raw=localStorage.getItem(LS_KEY);if(raw){const d=JSON.parse(raw);if(d&&Array.isArray(d.records))return normalize(d)}}catch(e){}return normalize({settings:{},records:[]})}function persist(){try{localStorage.setItem(getLSKey(),JSON.stringify(DB));}catch(e){} localStorage.setItem(LS_KEY,JSON.stringify(DB)); scheduleCloudSync();}
+const $=id=>document.getElementById(id);function toEn(s){return String(s??'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d))}function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}function nowTime(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')}function parseISO(s){const p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2])}function fmtDate(s){const d=parseISO(s);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()}function fmtDateFull(s){const d=parseISO(s);return AR_DAYS[d.getDay()]+' '+fmtDate(s)}function fmtMonth(ym){const p=ym.split('-');return(AR_MONTHS[+p[1]-1]||'')+' '+p[0]}function fmtTime(t){if(!t)return'';const p=String(t).split(':'),H=+p[0];return String(H%12||12).padStart(2,'0')+':'+p[1]+':'+p[2]+' '+(H<12?'ص':'م')}function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function org(){return DB.settings.orgName||'مدير الأسماء'}function countDay(iso){return DB.records.filter(r=>r.date===iso).length}function countToday(){return countDay(todayISO())}function nextNumber(){let m=0;DB.records.forEach(r=>{const n=parseInt(toEn(r.number));if(!isNaN(n)&&n>m)m=n});return m+1}function stats(){const by={'مستكمل':0,'غير مستكمل':0,'خامل':0};let files=0;DB.records.forEach(r=>{if(by[r.status]!==undefined)by[r.status]++;files+=Number(r.files)||0});return{total:DB.records.length,files,days:new Set(DB.records.map(r=>r.date)).size,...by}}let toastTimer=null;function toast(msg,type){const t=$('toast');t.textContent=msg;t.className='show'+(type==='err'?' err':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='',3500)}
+const overlay=$('overlay'),mBody=$('mBody');let mResolve=null;function closeModal(){overlay.classList.remove('show');if(mResolve){mResolve(false);mResolve=null}}overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();hideCtx()}});function askConfirm(title,msg,opt){opt=opt||{};return new Promise(res=>{mResolve=res;mBody.innerHTML='<h3>'+esc(title)+'</h3><p class="m-msg">'+esc(msg)+'</p><div class="m-actions"><button class="btn '+(opt.danger?'danger':'primary')+'" id="mOk">'+esc(opt.okText||'تأكيد')+'</button><button class="btn" id="mNo">إلغاء</button></div>';overlay.classList.add('show');$('mOk').onclick=()=>{const r=mResolve;mResolve=null;overlay.classList.remove('show');r(true)};$('mNo').onclick=closeModal})}function showInfo(title,msg){mBody.innerHTML='<h3>'+esc(title)+'</h3><p class="m-msg">'+esc(msg)+'</p><div class="m-actions"><button class="btn primary" id="mOk2">حسنًا</button></div>';overlay.classList.add('show');$('mOk2').onclick=closeModal}
+const NAVS=[['dashboard','🏠','الرئيسية'],['add','➕','إضافة اسم'],['records','🗂️','سجل الأسماء'],['form','📋','الاستمارة'],['daily','📅','السجل اليومي'],['stats','📊','الإحصائيات'],['export','📤','التصدير'],['backup','💾','النسخ الاحتياطي'],['settings','⚙️','الإعدادات']];function buildNav(){const n=$('nav');n.innerHTML='';NAVS.forEach(it=>{const b=document.createElement('button');b.textContent=it[1]+'  '+it[2];b.dataset.page=it[0];b.onclick=()=>switchPage(it[0]);n.appendChild(b)})}function switchPage(id){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id));const nv=NAVS.find(x=>x[0]===id);$('pageTitle').textContent=nv?nv[2]:'';if(id==='form'){const fd=$('fDate');if(fd&&!fd.value)fd.value=todayISO();try{renderFormRows();}catch(e){}}refreshAll()}
+function updateTopbar(){const n=countToday();$('dateLbl').textContent='📅 '+fmtDateFull(todayISO());$('pill').textContent='إدخالات اليوم: '+n;$('sideBadge').textContent='📌 اليوم: '+n+' اسم';$('orgLbl').textContent=org()}
+const THEAD='<tr><th>م</th><th>الاسم الثلاثي</th><th>الرقم</th><th>رقم الزائر</th><th>الحالة</th><th>عدد الملفات المنشأة</th><th>الملاحظات</th><th>تاريخ التسجيل</th><th>وقت التسجيل</th></tr>';function rowHtml(r,i){return'<tr data-id="'+r.id+'" class="'+(r.id===selId?'sel':'')+'"><td>'+(i+1)+'</td><td class="t-right">'+esc(r.name)+'</td><td>'+esc(r.number)+'</td><td>'+esc(r.visitor)+'</td><td><span class="st '+ST_CLS[r.status]+'">'+esc(r.status)+'</span></td><td>'+r.files+'</td><td class="t-right notes">'+esc(r.notes)+'</td><td>'+fmtDate(r.date)+'</td><td>'+fmtTime(r.time)+'</td></tr>'}function fillRows(tb,recs){tb.innerHTML=recs.length?recs.map(rowHtml).join(''):'<tr><td colspan="9" class="empty">لا توجد سجلات</td></tr>'}
+function renderChart(el,data){if(!data.length){el.innerHTML='<div class="chart-empty">لا توجد بيانات بعد</div>';return}const maxV=Math.max(...data.map(d=>d.v))||1,today=todayISO();let bars='',lbls='';data.forEach(d=>{const h=Math.max(2,d.v/maxV*100);bars+='<div class="cbar'+(d.iso===today?' today':'')+'" style="height:'+h+'%"><b>'+d.v+'</b></div>';lbls+='<div class="clbl">'+esc(d.lbl)+'</div>'});el.innerHTML='<div class="chart"><div class="cplot"><div class="cbars">'+bars+'</div></div><div class="clbls">'+lbls+'</div></div>'}
+function renderDashboard(){const s=stats(),n=countToday();$('sTotal').textContent=s.total;$('sTotalSub').textContent='عبر '+s.days+' يوم تسجيل';$('sToday').textContent=n;$('sDays').textContent=s.days;$('sFiles').textContent=s.files;$('sDone').textContent=s['مستكمل'];$('sNot').textContent=s['غير مستكمل'];$('sIdle').textContent=s['خامل'];$('sAvg').textContent=s.days?(s.total/s.days).toFixed(1):'0';$('dashTodaySub').textContent='عدد سجلات اليوم: '+n;fillRows($('dashTbody'),DB.records.filter(r=>r.date===todayISO()).sort((a,b)=>a.id-b.id));const dayMap={};DB.records.forEach(r=>dayMap[r.date]=(dayMap[r.date]||0)+1);const last7=Object.keys(dayMap).sort().slice(-7);renderChart($('dashChart'),last7.map(iso=>{const d=parseISO(iso);return{lbl:String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'),v:dayMap[iso],iso}}))}
+function refreshAdd(){$('addTodayLbl').textContent='(إدخالات اليوم: '+countToday()+')'}function clearAddFields(){$('inName').value='';$('inVisitor').value='';$('inNotes').value='';$('inFiles').value=0;$('inStatus').selectedIndex=0;$('inNumber').value=String(nextNumber());$('inName').focus()}
+
+async function saveName(){
+  const name=$('inName').value.trim();
+  if(!name){toast('يرجى إدخال الاسم الثلاثي.','err');$('inName').focus();return}
+  if(name.split(/\s+/).length<3){
+    const ok=await askConfirm('تأكيد','الاسم المُدخل أقل من ثلاث كلمات.\nهل تريد المتابعة؟',{okText:'متابعة'});
+    if(!ok)return
+  }
+  const number=toEn($('inNumber').value).trim()||String(nextNumber());
+  const visitor=toEn($('inVisitor').value).trim();
+  const files=parseInt(toEn($('inFiles').value))||0;
+  const headType=$('inHeadType')?$('inHeadType').value:'normal';
+  const totalCount=parseInt($('inFamilyCount')?$('inFamilyCount').value:0)||(quickMembersList.length+1);
+  // نسمح بالتكرار بعد تأكيد
+  const dups=[];
+  if(number&&DB.records.some(r=>r.number===number))dups.push('• الرقم '+number+' مستخدم مسبقًا');
+  if(visitor&&DB.records.some(r=>r.visitor===visitor))dups.push('• رقم الزائر '+visitor+' مستخدم مسبقًا');
+  if(dups.length){
+    const ok=await askConfirm('تنبيه تكرار',dups.join('\n')+'\n\nهل تريد المتابعة بالحفظ؟',{okText:'متابعة',danger:true});
+    if(!ok)return
+  }
+  try{
+    if(!sbClient||!currentUser){toast('السحابة غير متصلة - سجل دخول','err');return;}
+    const familyData=JSON.stringify({notes:$('inNotes').value.trim()||'', headType, familyMembers:quickMembersList.slice(), totalFamilyCount:totalCount, familyCount:totalCount});
+    // الحل النهائي لمشكلة 13: نولد id فريد كبير بالوقت - لا نعتمد على السيرفر
+    const uniqueId = Date.now() + Math.floor(Math.random()*10000);
+    const rowToInsert={id:uniqueId, name, number, visitor, status:$('inStatus').value, files, notes:familyData, date:todayISO(), time:nowTime(), user_id:currentUser.id};
+    const {data, error} = await sbClient.from('documents').insert(rowToInsert).select().single();
+    if(error) throw error;
+    // نضيفه محلياً بنفس الـ id الي رجع من السحابة
+    DB.records.push({id:Number(data.id), name:data.name, number:String(data.number||''), visitor:String(data.visitor||''), status:data.status, files:Number(data.files)||0, notes:$('inNotes').value.trim(), date:data.date, time:data.time, headType, familyMembers:quickMembersList.slice(), totalFamilyCount:totalCount, familyCount:totalCount});
+    DB.nextId=Math.max(DB.nextId, Number(data.id)+1);
+    try{localStorage.setItem(getLSKey(),JSON.stringify(DB)); localStorage.setItem(LS_KEY,JSON.stringify(DB));}catch(e){}
+    clearAddFields();
+    // نفرغ قائمة العائلة المؤقتة
+    quickMembersList=[]; if(typeof renderQuickMembers==='function') renderQuickMembers(); if(typeof updateFamilyCountHint==='function') updateFamilyCountHint();
+    refreshAll();
+    toast('✅ تم حفظ «'+name+'» - العدد هسه '+DB.records.length);
+  }catch(e){
+    console.error('save error', e);
+    toast('❌ فشل الحفظ: '+(e.message||e),'err');
+  }
+}
+function getFiltered(){const q=$('recSearch').value.trim().toLowerCase(),st=$('recStatus').value,mode=$('recMode').value,day=$('recDay').value,month=$('recMonth').value;return DB.records.filter(r=>{if(q&&(r.name+' '+r.number+' '+r.visitor).toLowerCase().indexOf(q)===-1)return false;if(st&&r.status!==st)return false;if(mode==='day'&&r.date!==day)return false;if(mode==='month'&&!r.date.startsWith(month))return false;return true}).sort((a,b)=>b.id-a.id)}function renderRecords(){const f=getFiltered();$('recCountLbl').textContent='النتائج: '+f.length+' من أصل '+DB.records.length+' سجل';fillRows($('recTbody'),f)}
+async function openEdit(id){const r=DB.records.find(x=>x.id===id);if(!r)return;mBody.innerHTML='<h3>تعديل السجل</h3><div class="fgrid"><label>الاسم الثلاثي *<input id="eName" value="'+esc(r.name)+'"></label><label>الرقم<input id="eNumber" inputmode="numeric" value="'+esc(r.number)+'"></label><label>رقم الزائر<input id="eVisitor" inputmode="numeric" value="'+esc(r.visitor)+'"></label><label>الحالة<select id="eStatus">'+STATUSES.map(s=>'<option'+(s===r.status?' selected':'')+'>'+s+'</option>').join('')+'</select></label><label>عدد الملفات المنشأة<input id="eFiles" inputmode="numeric" value="'+r.files+'"></label><label>الملاحظات<input id="eNotes" value="'+esc(r.notes)+'"></label></div><div class="sub" style="margin-top:10px">تاريخ التسجيل الأصلي: '+fmtDate(r.date)+' — '+fmtTime(r.time)+' (لا يتغير عند التعديل)</div><div class="m-actions"><button class="btn primary" id="eSave">💾 حفظ التعديلات</button><button class="btn" id="eCancel">إلغاء</button></div>';overlay.classList.add('show');$('eCancel').onclick=closeModal;$('eSave').onclick=async()=>{const name=$('eName').value.trim();if(!name){toast('الاسم الثلاثي مطلوب.','err');return}const number=toEn($('eNumber').value).trim(),visitor=toEn($('eVisitor').value).trim(),dups=[];if(number&&DB.records.some(x=>x.number===number&&x.id!==id))dups.push('• الرقم '+number+' مستخدم في سجل آخر');if(visitor&&DB.records.some(x=>x.visitor===visitor&&x.id!==id))dups.push('• رقم الزائر '+visitor+' مستخدم في سجل آخر');if(dups.length){const ok=await askConfirm('تنبيه تكرار',dups.join('\n')+'\n\nهل تريد المتابعة؟',{okText:'متابعة',danger:true});if(!ok)return}r.name=name;r.number=number;r.visitor=visitor;r.status=$('eStatus').value;r.files=parseInt(toEn($('eFiles').value))||0;r.notes=$('eNotes').value.trim();persist();closeModal();refreshAll();toast('✅ تم حفظ التعديلات بنجاح')}}
+function showCtx(x,y){ const ctxCheck=document.getElementById('ctx'); if(ctxCheck){ ctxCheck.innerHTML='<button data-act="view">👥 عرض العائلة</button><button data-act="form" style="background:#e0f2fe;font-weight:800">📋 فتح الاستمارة</button><button data-act="edit">✏️ تعديل رب الأسرة</button><button data-act="addMember">➕ إضافة فرد</button><button data-act="addLate">⏰ فرد وصل متأخر</button><button data-act="delete" style="color:#dc2626">🗑️ حذف العائلة</button><hr>'+STATUSES.map(s=>'<button data-act="st" data-st="'+s+'">🔁 '+s+'</button>').join(''); ctxCheck.style.display='block'; const rc=ctxCheck.getBoundingClientRect(); ctxCheck.style.left=Math.min(x,innerWidth-rc.width-8)+'px'; ctxCheck.style.top=Math.min(y,innerHeight-rc.height-8)+'px'; return; }const c=$('ctx');c.innerHTML='<button data-act="edit">✏️ تعديل السجل</button><hr>'+STATUSES.map(s=>'<button data-act="st" data-st="'+s+'">🔁 تعيين الحالة: '+s+'</button>').join('');c.style.display='block';const rc=c.getBoundingClientRect();c.style.left=Math.min(x,innerWidth-rc.width-8)+'px';c.style.top=Math.min(y,innerHeight-rc.height-8)+'px'}function hideCtx(){$('ctx').style.display='none'}
+function renderDaily(){const map={};DB.records.forEach(r=>{if(!map[r.date])map[r.date]={cnt:0,files:0};map[r.date].cnt++;map[r.date].files+=Number(r.files)||0});const days=Object.keys(map).sort().reverse();$('daysTotal').textContent='إجمالي السجلات: '+DB.records.length+' اسم عبر '+days.length+' يوم';if(!dailySel||!days.includes(dailySel))dailySel=days.includes(todayISO())?todayISO():(days[0]||null);$('dayList').innerHTML=days.length?days.map(iso=>{const m=map[iso];return'<div class="day-item'+(iso===dailySel?' sel':'')+'" data-d="'+iso+'"><div class="d1">📅 '+fmtDateFull(iso)+(iso===todayISO()?'<span class="tag-today">اليوم</span>':'')+'</div><div class="d2">'+m.cnt+' اسم • '+m.files+' ملف</div></div>'}).join(''):'<div class="empty">لا توجد أيام مسجلة بعد</div>';if(dailySel){const recs=DB.records.filter(r=>r.date===dailySel).sort((a,b)=>a.id-b.id);$('dayTitle').textContent='سجلات يوم '+fmtDateFull(dailySel);$('dayCount').textContent='عدد الأسماء: '+recs.length+' — إجمالي الملفات: '+recs.reduce((s,r)=>s+(Number(r.files)||0),0);fillRows($('dayTbody'),recs)}else{$('dayTitle').textContent='اختر يومًا لعرض سجلاته';$('dayCount').textContent='';$('dayTbody').innerHTML='<tr><td colspan="9" class="empty">—</td></tr>'}}
+function renderStats(){const s=stats(),dayMap={};DB.records.forEach(r=>dayMap[r.date]=(dayMap[r.date]||0)+1);const days=Object.keys(dayMap).sort();$('stAvg').textContent=s.days?(s.total/s.days).toFixed(1):'0';let best='—',bestSub='—';if(days.length){let bd=days[0];days.forEach(d=>{if(dayMap[d]>dayMap[bd])bd=d});best=dayMap[bd];bestSub=fmtDateFull(bd)}$('stBest').textContent=best;$('stBestSub').textContent=bestSub;$('stDays').textContent=s.days;$('stFiles').textContent=s.files;const colors={'مستكمل':'var(--green)','غير مستكمل':'var(--orange)','خامل':'#94a3b8'};$('distBox').innerHTML=STATUSES.map(st=>{const c=s[st],pct=s.total?Math.round(c*100/s.total):0;return'<div class="dist-row"><div class="dist-l">'+st+'</div><div class="dist-bar"><i style="width:'+pct+'%;background:'+colors[st]+'"></i></div><div class="dist-v">'+c+' ('+pct+'%)</div></div>'}).join('');renderChart($('statsChart'),days.slice(-14).map(iso=>{const d=parseISO(iso);return{lbl:String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'),v:dayMap[iso],iso}}));const mmap={};DB.records.forEach(r=>{const ym=r.date.slice(0,7);if(!mmap[ym])mmap[ym]={cnt:0,files:0,days:{}};mmap[ym].cnt++;mmap[ym].files+=Number(r.files)||0;mmap[ym].days[r.date]=1});const yms=Object.keys(mmap).sort().reverse();$('monthTbody').innerHTML=yms.length?yms.map(ym=>{const o=mmap[ym];return'<tr><td class="t-right">'+fmtMonth(ym)+'</td><td>'+o.cnt+'</td><td>'+Object.keys(o.days).length+'</td><td>'+o.files+'</td></tr>'}).join(''):'<tr><td colspan="4" class="empty">لا توجد بيانات بعد</td></tr>'}
+function downloadBlob(content,filename,mime){const blob=new Blob([content],{type:mime}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function applyExcelFormats(ws){const range=XLSX.utils.decode_range(ws['!ref']);for(let R=2;R<=range.e.r;R++){const cC=XLSX.utils.encode_cell({r:R,c:2}),cD=XLSX.utils.encode_cell({r:R,c:3});if(ws[cC])ws[cC].t='s';if(ws[cD])ws[cD].t='s'}}
+function exportExcel(records,scopeLabel,tag){const H=['م','الاسم الثلاثي','الرقم','رقم الزائر','الحالة','عدد الملفات المنشأة','الملاحظات','تاريخ التسجيل','وقت التسجيل'];if(window.XLSX){const aoa=[[org()+' — سجل الأسماء'],['نطاق التصدير: '+toEn(scopeLabel)+'   |   عدد السجلات: '+records.length+'   |   تاريخ التصدير: '+fmtDate(todayISO())],H];records.forEach((r,i)=>aoa.push([i+1,toEn(r.name),toEn(r.number),toEn(r.visitor),r.status,Number(r.files)||0,toEn(r.notes),toEn(fmtDate(r.date)),toEn(fmtTime(r.time))]));const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:8}},{s:{r:1,c:0},e:{r:1,c:8}}];ws['!cols']=[{wch:6},{wch:30},{wch:14},{wch:14},{wch:14},{wch:20},{wch:32},{wch:14},{wch:12}];applyExcelFormats(ws);const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};XLSX.utils.book_append_sheet(wb,ws,'السجلات');XLSX.writeFile(wb,'سجل_الأسماء_'+toEn(tag)+'.xlsx');return false}const lines=[H].concat(records.map((r,i)=>[i+1,toEn(r.name),toEn(r.number),toEn(r.visitor),r.status,Number(r.files)||0,toEn(r.notes),toEn(fmtDate(r.date)),toEn(fmtTime(r.time))])),csv='\uFEFF'+lines.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');downloadBlob(csv,'سجل_الأسماء_'+toEn(tag)+'.csv','text/csv;charset=utf-8');return true}
+function currentExport(){const v=$('expScope').value;if(v==='all')return DB.records.slice();if(v==='day')return DB.records.filter(r=>r.date===$('expDay').value);if(v==='month')return DB.records.filter(r=>r.date.startsWith($('expMonth').value));return DB.records.filter(r=>r.status===$('expStatus').value)}function currentExportLabel(){const v=$('expScope').value;if(v==='all')return'كل السجلات';if(v==='day')return'يوم '+fmtDate($('expDay').value);if(v==='month')return'شهر '+fmtMonth($('expMonth').value);return'الحالة: '+$('expStatus').value}function exportTag(){const v=$('expScope').value;return v==='all'?'الكل':v==='day'?$('expDay').value:v==='month'?$('expMonth').value:$('expStatus').value}function refreshExport(){$('expMatchLbl').textContent='عدد السجلات المطابقة: '+currentExport().length+' — النطاق: '+currentExportLabel()}
+function renderBackup(){$('bkInfo').innerHTML='عدد السجلات المحفوظة: <b>'+DB.records.length+'</b> — أيام التسجيل: <b>'+new Set(DB.records.map(r=>r.date)).size+'</b><br>مفتاح التخزين: <span class="mono">'+LS_KEY+'</span> (داخل متصفح هذا الجهاز)'}function renderSettings(){$('setOrg').value=DB.settings.orgName;$('setInfo').textContent='التطبيق: مدير الأسماء — الإصدار 1.3 — عدد السجلات: '+DB.records.length+' — المزامنة السحابية مخصصة بحساب المستخدم الشخصي.'}function refreshAll(){updateTopbar();renderDashboard();refreshAdd();renderRecords();renderDaily();renderStats();refreshExport();renderBackup();renderSettings()}
+
+function normAr(s){ if(!s) return ''; return String(s).toLowerCase().trim().replace(/[ًٌٍَُِّْـ]/g,'').replace(/أ|إ|آ/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي'); }
+function highlightMatch(txt,q){ if(!q) return esc(txt); const nt=normAr(txt), nq=normAr(q); const idx=nt.indexOf(nq); if(idx===-1) return esc(txt); const before=txt.slice(0,q.length>txt.length?0:idx); const mid=txt.slice(idx, idx+q.trim().length); const after=txt.slice(idx+q.trim().length); return esc(before)+'<span class="hl">'+esc(mid)+'</span>'+esc(after); }
+
+function getSmartResults(query){
+  if(!query || normAr(query).length<1) return [];
+  const nQ=normAr(query);
+  const list=[];
+  DB.records.forEach(fam=>{
+    const famNorm=normAr(fam.name);
+    const add = (name, type, member)=>{
+      const nn=normAr(name);
+      if(nn.includes(nQ) || famNorm.includes(nQ) || normAr(fam.number||'').includes(nQ) || normAr(fam.visitor||'').includes(nQ)){
+        list.push({name, type, fam, member, normName:nn});
+      }
+    };
+    add(fam.name,'head',null);
+    (fam.familyMembers||[]).forEach(mem=> add(mem.name,'member',mem));
+  });
+  // count duplicates
+  const groups={};
+  list.forEach(it=>{ const k=it.normName; groups[k]=(groups[k]||0)+1; });
+  list.forEach(it=>{ it.dupCount=groups[it.normName]; it.isDup=it.dupCount>1; });
+  // sort exact first
+  list.sort((a,b)=>{
+    const ae=a.normName===nQ?0:1, be=b.normName===nQ?0:1;
+    if(ae!==be) return ae-be;
+    if(a.type!==b.type) return a.type==='head'?-1:1;
+    return a.name.localeCompare(b.name,'ar');
+  });
+  return list.slice(0,60);
+}
+
+function renderSmartResults(results,q){
+  const box=$('smartResults');
+  if(!q || q.trim().length===0){ box.classList.remove('show'); return; }
+  if(results.length===0){ box.innerHTML='<div style="padding:16px;text-align:center;color:#94a3b8">لا توجد نتائج لـ "'+esc(q)+'"</div>'; box.classList.add('show'); return; }
+  const dupNames = new Set(results.filter(r=>r.isDup).map(r=>r.normName));
+  let html='<div style="padding:8px 12px;background:#f8fafc;border-bottom:1px solid #e5e9f0;display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:12px"><span>🔍 '+results.length+' نتيجة'+(dupNames.size?' — ⚠️ '+dupNames.size+' اسم متكرر':'')+'</span><span style="cursor:pointer" onclick="document.getElementById(\'smartResults\').classList.remove(\'show\')">✖️</span></div>';
+  if(dupNames.size>0){
+    html+='<div style="margin:8px;background:#fffbeb;border:1px solid #fcd34d;color:#92400e;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700">⚠️ تمييز دقيق: يوجد تشابه أسماء — كل نتيجة معروضة مع اسم العائلة ورقمها وصلة القرابة لتفرق بينهم گبل</div>';
+  }
+  html+=results.map(it=>{
+    const fam=it.fam; const mem=it.member;
+    const relation = it.type==='head'? 'رب الأسرة' : (mem?.relation||'فرد');
+    const age = mem?.age||'—';
+    const visitor = mem?.number || fam.visitor || '—';
+    const famNum = fam.number || '—';
+    return `<div class="sr-item" onclick="jumpToFamilySmart(${fam.id})">
+      <div class="sr-av">${it.type==='head'?'👑':(relation[0]||'ف')}</div>
+      <div style="flex:1;min-width:0">
+        <div class="sr-name">${highlightMatch(it.name,q)} ${it.type==='head'?'<span style="color:#2563eb;font-size:11px">(رب أسرة)</span>':''} ${it.isDup?'<span class="badge badge-sim">⚠️ تشابه x'+it.dupCount+'</span>':''}</div>
+        <div class="sr-meta"><span>👨‍👩‍👧‍👦 ${esc(fam.name)}</span><span>🔢 ${esc(famNum)}</span><span>🎫 ${esc(visitor)}</span></div>
+        <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+          <span class="badge badge-fam">عائلة: ${esc(fam.name.slice(0,20))}</span>
+          <span class="badge badge-rel">${esc(relation)} ${age!=='—'?' - 🎂 '+esc(age):''}</span>
+          <span class="badge" style="background:#ffedd5;color:#9a3412">رقم: ${esc(famNum)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  box.innerHTML=html;
+  box.classList.add('show');
+}
+
+function jumpToFamilySmart(id){
+  $('smartResults').classList.remove('show');
+  selId=id;
+  // switch to records if not there? keep current but highlight
+  const r=DB.records.find(x=>x.id===id);
+  if(!r) return;
+  // if in dashboard, go to records tab for better view
+  if(typeof switchPage==='function'){ switchPage('records'); setTimeout(()=>{ const row=document.querySelector('#recTbody tr[data-id="'+id+'"]'); if(row){ row.scrollIntoView({behavior:'smooth',block:'center'}); row.classList.add('sel'); setTimeout(()=>row.classList.remove('sel'),2500);} },200); }
+  // also open family view
+  setTimeout(()=>{ if(typeof openFamilyView==='function') openFamilyView(id); },400);
+}
+
+function clearSmartSearchBox(){ const b=$('smartResults'); if(b) b.classList.remove('show'); }
+
+function wireEvents(){$('btnAddSave').onclick=saveName;$('btnAddClear').onclick=clearAddFields;$('inName').addEventListener('keydown',e=>{if(e.key==='Enter')saveName()});$('recSearch').addEventListener('input',renderRecords);$('recStatus').onchange=renderRecords;$('recMode').onchange=()=>{const m=$('recMode').value;$('recDay').style.display=m==='day'?'':'none';$('recMonth').style.display=m==='month'?'':'none';renderRecords()};$('recDay').onchange=renderRecords;$('recMonth').onchange=renderRecords;$('recRefresh').onclick=refreshAll;$('recEdit').onclick=()=>selId?openEdit(selId):showInfo('تعديل','حدد سجلًا من الجدول أولًا (نقرة واحدة) أو انقر نقرًا مزدوجًا على السجل.');$('recExport').onclick=()=>{const recs=getFiltered();if(!recs.length){toast('لا توجد نتائج لتصديرها.','err');return}try{exportExcel(recs,'نتائج البحث الحالية','نتائج_البحث');toast('تم التصدير بنجاح ✅ (بأرقام إنجليزية)')}catch(e){toast('تعذر التصدير: '+e.message,'err')}};$('recTbody').addEventListener('click',e=>{const tr=e.target.closest('tr');if(!tr||!tr.dataset.id)return;selId=+tr.dataset.id;document.querySelectorAll('#recTbody tr').forEach(x=>x.classList.toggle('sel',+x.dataset.id===selId))});$('recTbody').addEventListener('dblclick',e=>{const tr=e.target.closest('tr');if(tr&&tr.dataset.id)openEdit(+tr.dataset.id)});$('recTbody').addEventListener('contextmenu',e=>{const tr=e.target.closest('tr');if(!tr||!tr.dataset.id)return;e.preventDefault();selId=+tr.dataset.id;showCtx(e.clientX,e.clientY);renderRecords()});$('ctx').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const act=b.dataset.act;hideCtx();if(!selId)return;if(act==='edit')openEdit(selId);else if(act==='st'){const r=DB.records.find(x=>x.id===selId);if(r){r.status=b.dataset.st;persist();refreshAll();toast('تم تحديث الحالة ✅')}}});document.addEventListener('click',e=>{if(!e.target.closest('#ctx'))hideCtx()});$('dayList').addEventListener('click',e=>{const it=e.target.closest('.day-item');if(!it)return;dailySel=it.dataset.d;renderDaily()});$('expScope').onchange=()=>{const v=$('expScope').value;$('expDay').style.display=v==='day'?'':'none';$('expMonth').style.display=v==='month'?'':'none';$('expStatus').style.display=v==='status'?'':'none';refreshExport()};$('expDay').onchange=refreshExport;$('expMonth').onchange=refreshExport;$('expStatus').onchange=refreshExport;$('btnExport').onclick=()=>{const recs=currentExport();if(!recs.length){toast('لا توجد سجلات مطابقة للتصدير.','err');return}try{const fallback=exportExcel(recs,currentExportLabel(),exportTag());toast(fallback?'تم التصدير بصيغة CSV (أرقام إنجليزية) ✅':'تم تصدير '+recs.length+' سجل بنجاح ✅ (بأرقام إنجليزية)')}catch(e){toast('تعذر التصدير: '+e.message,'err')}};$('btnBackupDl').onclick=()=>{const payload={app:'NamesManager',version:1,exportedAt:new Date().toISOString(),data:DB};downloadBlob(JSON.stringify(payload,null,2),'نسخة_احتياطية_'+todayISO()+'.json','application/json');toast('تم تنزيل النسخة الاحتياطية بنجاح ✅')};$('btnBackupRestore').onclick=()=>$('bkFile').click();$('bkFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const j=JSON.parse(rd.result),data=j&&j.data?j.data:j;if(!data||!Array.isArray(data.records))throw new Error('bad');askConfirm('استعادة نسخة احتياطية','سيتم استبدال البيانات الحالية بمحتوى هذه النسخة.\n\nهل تريد المتابعة؟',{okText:'استعادة'}).then(ok=>{if(!ok)return;DB=normalize(data);selId=null;dailySel=null;persist();refreshAll();toast('تمت استعادة النسخة الاحتياطية بنجاح ✅')})}catch(err){toast('ملف نسخة احتياطية غير صالح ❌','err')}};rd.readAsText(f);e.target.value=''};$('btnSetOrg').onclick=()=>{DB.settings.orgName=$('setOrg').value.trim();persist();refreshAll();toast('تم حفظ اسم الجهة ✅')}}
+
+
+
+// ==================== Supabase + Family Manager - نظيف ويشتغل ====================
+let sbClient=null, cloudTimer=null, cloudBusy=false, currentUser=null;
+const SB_DEFAULT_URL=SB_URL; const SB_DEFAULT_KEY=SB_KEY;
+function sbConfig(){return {url:SB_URL,key:SB_KEY};}
+function setCloudState(){}
+function initSupabase(){try{sbClient=window.supabase.createClient(SB_URL,SB_KEY);return true;}catch(e){return false;}}
+function getLSKey(){return LS_KEY+'_'+(currentUser?currentUser.id:'global');}
+
+
+let currentFormFamilyId=null;
+let formRows=[{name:'',gender:'ذكر',day:'',month:'',year:'',education:'ابتدائية',job:''}];
+function refreshFamilyDatalist(){
+  const dl=document.getElementById('familyList'); if(!dl) return;
+  dl.innerHTML=DB.records.map(r=>`<option value="${r.name} - ${r.number||r.id}">`).join('');
+}
+function renderFormRows(){
+  const tb=document.getElementById('formTbody'); if(!tb) return;
+  if(formRows.length===0) formRows=[{name:'',gender:'ذكر',day:'',month:'',year:'',education:'ابتدائية',job:'كاسب'}];
+  const eduOptions=['','أمي','يقرأ ويكتب','ابتدائية','متوسطة','اعدادية','دبلوم','بكلوريوس','ماجستير','دكتوراء','بورد','أخرى'];
+  const jobOptions=['','كاسب','موظف','موظف متقاعد','متقاعد','ربة بيت','فلاح','عاطل','طالب','عامل','موظف حكومي','أخرى'];
+  const days=Array.from({length:31},(_,i)=>i+1);
+  const months=[{v:'1',t:'1 - كانون الثاني'},{v:'2',t:'2 - شباط'},{v:'3',t:'3 - آذار'},{v:'4',t:'4 - نيسان'},{v:'5',t:'5 - أيار'},{v:'6',t:'6 - حزيران'},{v:'7',t:'7 - تموز'},{v:'8',t:'8 - آب'},{v:'9',t:'9 - أيلول'},{v:'10',t:'10 - تشرين الأول'},{v:'11',t:'11 - تشرين الثاني'},{v:'12',t:'12 - كانون الأول'}];
+  const currentYear=new Date().getFullYear(); const years=[]; for(let y=currentYear;y>=1920;y--) years.push(y);
+  tb.innerHTML=formRows.map((r,i)=>{
+    const dayOpts='<option value="">اليوم</option>'+days.map(d=>`<option value="${d}" ${String(r.day)==String(d)?'selected':''}>${d}</option>`).join('');
+    const monthOpts='<option value="">الشهر</option>'+months.map(m=>`<option value="${m.v}" ${String(r.month)==String(m.v)?'selected':''}>${m.t}</option>`).join('');
+    const yearOpts='<option value="">السنة</option>'+years.map(y=>`<option value="${y}" ${String(r.year)==String(y)?'selected':''}>${y}</option>`).join('');
+    const eduOpts=eduOptions.map(o=>`<option value="${o}" ${r.education===o?'selected':''}>${o||'-- درجة التعلم --'}</option>`).join('');
+    const jobOpts=jobOptions.map(o=>`<option value="${o}" ${r.job===o?'selected':''}>${o||'-- المهنة --'}</option>`).join('');
+    return `<tr>
+      <td style="font-weight:800;text-align:center;background:#f1f5f9">${i+1}</td>
+      <td><input class="f-inp" style="padding:6px" value="${(r.name||'').replace(/"/g,'&quot;')}" oninput="formRows[${i}].name=this.value" placeholder="الاسم الرباعي"></td>
+      <td><select class="f-inp" style="padding:6px" onchange="formRows[${i}].gender=this.value"><option value="ذكر" ${r.gender==='ذكر'?'selected':''}>ذكر</option><option value="أنثى" ${r.gender==='أنثى'?'selected':''}>أنثى</option></select></td>
+      <td>
+        <div style="display:flex;gap:4px;direction:ltr">
+          <select class="f-inp" style="padding:5px;width:70px;direction:ltr" onchange="formRows[${i}].year=this.value">${yearOpts}</select>
+          <select class="f-inp" style="padding:5px;width:120px;direction:ltr" onchange="formRows[${i}].month=this.value">${monthOpts}</select>
+          <select class="f-inp" style="padding:5px;width:70px;direction:ltr" onchange="formRows[${i}].day=this.value">${dayOpts}</select>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:#64748b;direction:ltr;margin-top:2px"><span>Year يسار</span><span>Month وسط</span><span>Day يمين</span></div>
+      </td>
+      <td><select class="f-inp" style="padding:6px;font-size:12px" onchange="formRows[${i}].education=this.value">${eduOpts}</select></td>
+      <td><select class="f-inp" style="padding:6px;font-size:12px" onchange="formRows[${i}].job=this.value">${jobOpts}</select></td>
+      <td class="no-print" style="text-align:center"><button class="btn danger" style="padding:4px 8px" onclick="formRows.splice(${i},1); renderFormRows(); updateFormCount()">🗑️</button></td>
+    </tr>`;
+  }).join('');
+  updateFormCount();
+}
+
+function updateFormCount(){
+  const count=Math.max(0, Array.isArray(formRows)?formRows.length:0);
+  const c=document.getElementById('fCount'); if(c) c.value=count;
+  const d=document.getElementById('fCountDisplay'); if(d) d.value=count;
+  return count;
+}
+
+
+
+function exportFormToWord(){
+  try{
+    var rows=Array.isArray(formRows)?formRows:[];
+    var val=function(id){var e=document.getElementById(id); return e?String(e.value||'').trim():'';};
+    var esc=function(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+    var headName=val('fHeadName')||(rows[0]&&rows[0].name||'');
+    var familyNo=val('fFamilyNo')||'';
+    var date=val('fDate')||'';
+    var address=val('fAddress')||'';
+    var landmark=val('fLandmark')||'';
+    var phone=val('fPhone')||'';
+    if(!headName && !familyNo){ toast('أدخل اسم رب الأسرة','err'); return; }
+    var fmtBirth=function(r){
+      var y=r.year||'',m=r.month||'',d=r.day||'';
+      if(d&&m&&y) return d+' / '+m+' / '+y;
+      if(y) return y;
+      return '';
+    };
+    var rowsHtml=rows.map(function(r,i){
+      return '<tr dir="rtl">'
+        +'<td dir="rtl" style="border:1.5pt solid black;padding:5pt;text-align:center;font-family:Arial;font-size:10pt;font-weight:bold;direction:rtl" bgcolor="white">'+(i+1)+'</td>'
+        +'<td dir="rtl" style="border:1.5pt solid black;padding:5pt;text-align:right;font-family:Arial;font-size:10pt;direction:rtl" bgcolor="white">'+esc(r.name||'')+'</td>'
+        +'<td dir="rtl" style="border:1.5pt solid black;padding:5pt;text-align:center;font-family:Arial;font-size:10pt;direction:rtl" bgcolor="white">'+esc(r.gender||'')+'</td>'
+        +'<td dir="rtl" style="border:1.5pt solid black;padding:5pt;text-align:center;direction:ltr;font-family:Arial;font-size:10pt" bgcolor="white">'+esc(fmtBirth(r))+'</td>'
+        +'<td dir="rtl" style="border:1.5pt solid black;padding:5pt;text-align:center;font-family:Arial;font-size:10pt;direction:rtl" bgcolor="white">'+esc(r.education||'')+'</td>'
+        +'<td dir="rtl" style="border:1.5pt solid black;padding:5pt;text-align:center;font-family:Arial;font-size:10pt;direction:rtl" bgcolor="white">'+esc(r.job||'')+'</td>'
+        +'</tr>';
+    }).join('');
+    var count=rows.length;
+    var doc='<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" dir="rtl"><head><meta charset="utf-8"><meta name="ProgId" content="Word.Document"><style>@page{size:A4;margin:1cm} body{font-family:Arial;direction:rtl}</style></head><body dir="rtl" style="font-family:Arial;direction:rtl;text-align:right">'
+      +'<p dir="rtl" style="text-align:center;font-size:16pt;font-weight:bold;font-family:Arial;margin:10pt 0 6pt 0;direction:rtl">استمارة العائلة الرسمية</p>'
+      +'<div style="border-top:3pt solid black;margin:0 0 10pt 0"></div>'
+      +'<table dir="rtl" border="1" cellpadding="4" cellspacing="0" width="100%" style="border-collapse:collapse;direction:rtl;border:1.5pt solid black">'
+      +'<tr dir="rtl">'
+      +'<td dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:white;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" bgcolor="white" width="50%">الرقم العائلي / رقم العائلة:</td>'
+      +'<td dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:white;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" bgcolor="white" width="50%">تاريخ فتح السجل:</td>'
+      +'</tr>'
+      +'<tr dir="rtl">'
+      +'<td dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:#E7E6E6;text-align:center;font-weight:bold;font-family:Arial;font-size:11pt;direction:rtl" bgcolor="#E7E6E6"><b>'+esc(familyNo)+'</b></td>'
+      +'<td dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:#E7E6E6;text-align:center;font-family:Arial;font-size:11pt;direction:rtl" bgcolor="#E7E6E6">'+esc(date)+'</td>'
+      +'</tr>'
+      +'<tr dir="rtl"><td dir="rtl" colspan="2" style="border:1.5pt solid black;padding:6pt;background-color:white;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" bgcolor="white">اسم رب الاسرة الرباعي:</td></tr>'
+      +'<tr dir="rtl"><td dir="rtl" colspan="2" style="border:1.5pt solid black;padding:8pt;background-color:#D9EAD3;font-weight:bold;font-family:Arial;font-size:12pt;text-align:right;direction:rtl" bgcolor="#D9EAD3"><b>'+esc(headName)+'</b></td></tr>'
+      +'<tr dir="rtl"><td dir="rtl" colspan="2" style="border:1.5pt solid black;padding:6pt;background-color:white;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" bgcolor="white">عنوان السكن</td></tr>'
+      +'<tr dir="rtl"><td dir="rtl" colspan="2" style="border:1.5pt solid black;padding:8pt;background-color:#E2EFDA;font-family:Arial;font-size:11pt;text-align:right;direction:rtl" bgcolor="#E2EFDA">'+esc(address)+'</td></tr>'
+      +'<tr dir="rtl">'
+      +'<td dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:white;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" bgcolor="white" width="50%">اقرب نقطة دالة:</td>'
+      +'<td dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:white;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" bgcolor="white" width="50%">رقم الهاتف:</td>'
+      +'</tr>'
+      +'<tr dir="rtl">'
+      +'<td dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:white;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" bgcolor="white">'+esc(landmark)+'</td>'
+      +'<td dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:white;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" bgcolor="white">'+esc(phone)+'</td>'
+      +'</tr>'
+      +'</table>'
+      +'<p style="height:12pt"></p>'
+      +'<table dir="rtl" border="1" cellpadding="4" cellspacing="0" width="100%" style="border-collapse:collapse;border:1.5pt solid black;direction:rtl">'
+      +'<tr dir="rtl"><td dir="rtl" colspan="6" style="border:1.5pt solid black;padding:7pt;background-color:black;color:white;text-align:center;font-weight:bold;font-family:Arial;font-size:11pt;direction:rtl" bgcolor="black"><font color="white"><b>جدول افراد العائلة - عائلة '+esc(headName)+' - العدد '+count+'</b></font></td></tr>'
+      +'</table>'
+      +'<table dir="rtl" border="1" cellpadding="4" cellspacing="0" width="100%" style="border-collapse:collapse;direction:rtl;border:1.5pt solid black">'
+      +'<thead><tr dir="rtl">'
+      +'<th dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:#BFBFBF;text-align:center;font-family:Arial;font-size:9pt;font-weight:bold;direction:rtl" bgcolor="#BFBFBF" width="8%">ت</th>'
+      +'<th dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:#BFBFBF;text-align:center;font-family:Arial;font-size:9pt;font-weight:bold;direction:rtl" bgcolor="#BFBFBF" width="39%">الاسم الرباعي</th>'
+      +'<th dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:#BFBFBF;text-align:center;font-family:Arial;font-size:9pt;font-weight:bold;direction:rtl" bgcolor="#BFBFBF" width="8%">الجنس</th>'
+      +'<th dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:#BFBFBF;text-align:center;font-family:Arial;font-size:9pt;font-weight:bold;direction:rtl" bgcolor="#BFBFBF" width="20%">المواليد [Year / Month / Day]<br><span style="font-size:7pt;font-weight:normal">السنة يسار - الشهر وسط - اليوم يمين</span></th>'
+      +'<th dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:#BFBFBF;text-align:center;font-family:Arial;font-size:9pt;font-weight:bold;direction:rtl" bgcolor="#BFBFBF" width="13%">درجة التعلم</th>'
+      +'<th dir="rtl" style="border:1.5pt solid black;padding:6pt;background-color:#BFBFBF;text-align:center;font-family:Arial;font-size:9pt;font-weight:bold;direction:rtl" bgcolor="#BFBFBF" width="12%">المهنة</th>'
+      +'</tr></thead><tbody>'+(rowsHtml||'<tr dir="rtl"><td dir="rtl" colspan="6" style="border:1.5pt solid black;padding:6pt;text-align:center;direction:rtl" bgcolor="white">لا يوجد بيانات</td></tr>')+'</tbody></table>'
+      +'<p style="height:18pt"></p>'
+      +'<table dir="rtl" border="1" cellpadding="4" cellspacing="0" width="100%" style="border-collapse:collapse;border:2pt solid black;direction:rtl"><tr dir="rtl"><td dir="rtl" style="border:2pt solid black;padding:6pt;background-color:#BFBFBF;text-align:center;font-weight:bold;font-family:Arial;font-size:11pt;direction:rtl" bgcolor="#BFBFBF"><b>بيانات الموظف الذي ملا الاستمارة</b></td></tr></table>'
+      +'<table dir="rtl" border="0" cellpadding="4" cellspacing="0" width="100%" style="border:none;direction:rtl"><tr dir="rtl">'
+      +'<td dir="rtl" style="border:none;padding:15pt 4pt 4pt 4pt;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" width="50%">اسم الموظف:</td>'
+      +'<td dir="rtl" style="border:none;padding:15pt 4pt 4pt 4pt;font-family:Arial;font-size:10pt;text-align:right;direction:rtl" width="50%">توقيع وختم الموظف:</td>'
+      +'</tr></table>'
+      +'</body></html>';
+    var blob=new Blob(['\ufeff',doc],{type:'application/msword'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;
+    var safe=(headName||'عائلة').replace(/[^\w\u0600-\u06FF ]/g,'_').slice(0,30);
+    a.download='استمارة_'+safe+'.doc';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){URL.revokeObjectURL(url); a.remove();},1500);
+    toast('✅ تم تصدير الاستمارة من اليمين لليسار - عنوان السكن + توقيع وختم الموظف');
+  }catch(e){ console.error(e); toast('❌ فشل: '+e.message,'err'); }
+}
+window.exportFormToWord=exportFormToWord;
+
+
+
+async function saveForm(){
+  try{
+    var val=function(id){var e=document.getElementById(id); return e?String(e.value||'').trim():'';};
+    var headName=val('fHeadName');
+    var familyNo=val('fFamilyNo');
+    var date=val('fDate')||todayISO();
+    var address=val('fAddress');
+    var landmark=val('fLandmark');
+    var phone=val('fPhone');
+    if(!headName){ toast('أدخل اسم رب الأسرة','err'); var el=document.getElementById('fHeadName'); if(el) el.focus(); return; }
+    var rows=Array.isArray(formRows)?formRows:[];
+    rows=rows.filter(function(r){return (r.name||'').trim()!=='';});
+    if(rows.length===0){ toast('أضف فرد واحد على الأقل','err'); return; }
+    var familyMembers=rows.map(function(r,i){
+      if(i===0 && r.name.trim()===headName.trim()) return null;
+      return {name:r.name||'', relation:r.job||'ابن', age:r.year||'', gender:r.gender||'ذكر', education:r.education||'', job:r.job||'', day:r.day||'', month:r.month||'', year:r.year||''};
+    }).filter(Boolean);
+    var totalCount=rows.length;
+    if(currentFormFamilyId){
+      var rec=DB.records.find(function(x){return x.id==currentFormFamilyId;});
+      if(rec){
+        rec.name=headName; rec.number=familyNo||rec.number; rec.date=date; rec.address=address; rec.landmark=landmark; rec.phone=phone; rec.familyMembers=familyMembers; rec.totalFamilyCount=totalCount; rec.familyCount=totalCount; rec.files=totalCount;
+        try{ var extra={notes:'', headType:rec.headType||'normal', familyMembers:familyMembers, totalFamilyCount:totalCount, familyCount:totalCount, address:address, landmark:landmark, phone:phone}; rec.notes=JSON.stringify(extra);}catch(e){}
+        persist(); refreshAll(); toast('✅ تم تحديث عائلة '+headName); return;
+      }
+    }
+    var newId=Date.now()+Math.floor(Math.random()*1000);
+    var familyData={notes:'', headType:'normal', familyMembers:familyMembers, totalFamilyCount:totalCount, familyCount:totalCount, address:address, landmark:landmark, phone:phone};
+    var newRec={id:newId, name:headName, number:familyNo||String(newId).slice(-4), visitor:'', status:'مستكمل', files:totalCount, notes:JSON.stringify(familyData), date:date, time:nowTime(), headType:'normal', familyMembers:familyMembers, totalFamilyCount:totalCount, familyCount:totalCount, address:address, landmark:landmark, phone:phone};
+    if(typeof sbClient!=='undefined' && sbClient && typeof currentUser!=='undefined' && currentUser){
+      try{
+        var rowToInsert={name:headName, number:familyNo||String(newId).slice(-4), visitor:'', status:'مستكمل', files:totalCount, notes:JSON.stringify(familyData), date:date, time:nowTime(), user_id:currentUser.id};
+        var res=await sbClient.from('documents').insert(rowToInsert).select().single();
+        if(res && res.data){ newRec.id=Number(res.data.id); }
+      }catch(e){ console.log('cloud failed',e); }
+    }
+    DB.records.push(newRec);
+    DB.nextId=Math.max(DB.nextId, newRec.id+1);
+    try{localStorage.setItem(getLSKey(),JSON.stringify(DB)); localStorage.setItem(LS_KEY,JSON.stringify(DB));}catch(e){}
+    currentFormFamilyId=newRec.id;
+    refreshAll();
+    toast('✅ تم حفظ عائلة '+headName+' - العدد '+totalCount);
+  }catch(e){ console.error(e); toast('❌ خطأ: '+e.message,'err'); }
+}
+window.saveForm=saveForm;
+function loadFamilyToForm(id){
+  let fam=DB.records.find(x=>x.id==id);
+  if(!fam){
+    const q=String(id).split(' - ')[0].trim();
+    fam=DB.records.find(r=>r.name===q || r.name.includes(q) || String(r.number)===q || String(r.id)===q);
+  }
+  if(!fam){ toast('العائلة غير موجودة','err'); return; }
+  currentFormFamilyId=fam.id; selId=fam.id;
+  const fd=document.getElementById('fDate'); if(fd) fd.value=fam.date||todayISO();
+  const fn=document.getElementById('fFamilyNo'); if(fn) fn.value=fam.number||fam.id;
+  const fh=document.getElementById('fHeadName'); if(fh) fh.value=fam.name;
+  const fl=document.getElementById('fLandmark'); if(fl) fl.value=fam.landmark||'';
+  const fp=document.getElementById('fPhone'); if(fp) fp.value=fam.phone||'';
+  formRows=[];
+  formRows.push({name:fam.name, gender:'ذكر', day:'', month:'', year:'', education:'', job:'رب أسرة'});
+  (fam.familyMembers||[]).forEach(m=>{ formRows.push({name:m.name||'', gender:'ذكر', day:'', month:'', year:m.age||'', education:'', job:m.relation||''}); });
+  if(formRows.length===1) formRows.push({name:'', gender:'ذكر', day:'', month:'', year:'', education:'ابتدائية', job:''});
+  renderFormRows(); updateFormCount(); switchPage('form'); const s=document.getElementById('fSearch'); if(s) s.value=fam.name; toast('تم فتح استمارة: '+fam.name);
+}
+function clearForm(){ currentFormFamilyId=null; const fd=document.getElementById('fDate'); if(fd) fd.value=todayISO(); ['fFamilyNo','fHeadName','fLandmark','fPhone'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';}); formRows=[{name:'', gender:'ذكر', day:'', month:'', year:'', education:'ابتدائية', job:''}]; renderFormRows(); updateFormCount(); }
+window.loadFamilyToForm=loadFamilyToForm; window.refreshFamilyDatalist=refreshFamilyDatalist;
+
+function ensureFamilyData(rec){
+  if(!rec.familyMembers) rec.familyMembers=[];
+  if(!rec.headType) rec.headType='normal';
+  return rec;
+}
+
+async function checkUserSession(){
+  initSupabase();
+  const s=localStorage.getItem('currentUser');
+  if(s){
+    try{
+      const cu=JSON.parse(s);
+      if(cu&&cu.id){
+        currentUser=cu;
+        try{
+          const r=localStorage.getItem(getLSKey());
+          if(r){ DB=normalize(JSON.parse(r)); DB.records.forEach(ensureFamilyData); }
+        }catch(e){}
+        document.getElementById('loginGate').style.display='none';
+        document.querySelector('.app').style.display='flex';
+        refreshAll(); cloudLoad(); return;
+      }
+    }catch(e){}
+  }
+  document.getElementById('loginGate').style.display='flex';
+  document.querySelector('.app').style.display='none';
+}
+
+async function doLogin(email,pass,msgEl){
+  if(!email||!pass){msgEl.textContent='أدخل البريد وكلمة المرور'; return;}
+  msgEl.textContent='⏳ جاري الدخول...'; msgEl.style.color='#2563eb';
+  try{
+    if(!sbClient) initSupabase();
+    const {data,error}=await sbClient.auth.signInWithPassword({email,password:pass});
+    if(error) throw error;
+    currentUser={id:data.user.id,email:data.user.email};
+    localStorage.setItem('currentUser',JSON.stringify(currentUser));
+    document.getElementById('loginGate').style.display='none';
+    document.querySelector('.app').style.display='flex';
+    refreshAll(); cloudLoad(); toast('تم الدخول ✅');
+  }catch(err){
+    let m=err.message||'';
+    if(m.includes('Email not confirmed')) m='البريد غير مؤكد - عطّل Confirm email في Supabase';
+    else if(m.includes('Invalid login')) m='بريد أو كلمة مرور خطأ';
+    msgEl.textContent=m; msgEl.style.color='#dc2626';
+  }
+}
+
+async function doSignup(email,pass,msgEl){
+  if(!email||pass.length<4){msgEl.textContent='بريد وكلمة مرور 4 أحرف'; return;}
+  msgEl.textContent='⏳ جاري إنشاء الحساب...'; msgEl.style.color='#2563eb';
+  try{
+    if(!sbClient) initSupabase();
+    const {data,error}=await sbClient.auth.signUp({email,password:pass});
+    if(error) throw error;
+    msgEl.textContent='✅ تم إنشاء الحساب - سجل دخول الآن'; msgEl.style.color='#059669';
+    toast('تم إنشاء الحساب ✅');
+  }catch(err){
+    let m=err.message||'';
+    if(m.includes('already registered')) m='الحساب موجود - سجل دخول';
+    msgEl.textContent=m; msgEl.style.color='#dc2626';
+  }
+}
+
+async function cloudLoad(){
+  if(!sbClient||!currentUser) return;
+  try{
+    const {data}=await sbClient.from('documents').select('*').eq('user_id', currentUser.id).order('id',{ascending:true});
+    if(data&&data.length){
+      DB.records=data.map(row=>{
+        try{
+          let extra={};
+          if(row.notes && row.notes.startsWith('{') && row.notes.includes('familyMembers')){
+            extra=JSON.parse(row.notes);
+          }
+          return {
+            id:Number(row.id),
+            name:row.name,
+            number:String(row.number||''),
+            visitor:String(row.visitor||''),
+            status:row.status,
+            files:Number(row.files)||0,
+            notes:extra.notes||'',
+            date:row.date,
+            time:row.time,
+            headType:extra.headType||'normal',
+            familyMembers:extra.familyMembers||[],
+            totalFamilyCount:extra.totalFamilyCount||extra.familyCount||((extra.familyMembers?extra.familyMembers.length:0)+1),
+            familyCount:extra.totalFamilyCount||extra.familyCount||((extra.familyMembers?extra.familyMembers.length:0)+1)
+          };
+        }catch(e){
+          return {id:Number(row.id), name:row.name, number:String(row.number||''), visitor:String(row.visitor||''), status:row.status, files:Number(row.files)||0, notes:row.notes||'', date:row.date, time:row.time, headType:'normal', familyMembers:[]};
+        }
+      });
+      DB.nextId=DB.records.reduce((m,r)=>Math.max(m,r.id),0)+1;
+      localStorage.setItem(getLSKey(),JSON.stringify(DB));
+      localStorage.setItem(LS_KEY,JSON.stringify(DB));
+      refreshAll();
+      toast('☁️ تم استرجاع '+DB.records.length+' عائلة من السحابة ✅');
+    }
+  }catch(e){}
+}
+
+function scheduleCloudSync(){ if(cloudTimer) clearTimeout(cloudTimer); cloudTimer=setTimeout(()=>{ cloudSync(); }, 800); }
+
+async function cloudSync(){
+  if(cloudBusy||!sbClient||!currentUser) return;
+  cloudBusy=true;
+  try{
+    const rows=DB.records.map(r=>{
+      const familyData=JSON.stringify({notes:r.notes||'', headType:r.headType||'normal', familyMembers:r.familyMembers||[], totalFamilyCount:r.totalFamilyCount||r.familyCount||(r.familyMembers.length+1), familyCount:r.totalFamilyCount||r.familyCount||(r.familyMembers.length+1)});
+      return {id:Number(r.id), name:r.name, number:String(r.number||''), visitor:String(r.visitor||''), status:r.status, files:Number(r.files)||0, notes:familyData, date:r.date, time:r.time, user_id:currentUser.id};
+    });
+    if(rows.length) await sbClient.from('documents').upsert(rows,{onConflict:'id'});
+  }catch(e){}finally{cloudBusy=false;}
+}
+
+function cloudSettingsLoad(){const u=$('sbUrl'),k=$('sbKey'); if(u){u.value=SB_URL; u.type='password'; u.readOnly=true;} if(k){k.value=SB_KEY; k.type='password'; k.readOnly=true;}}
+
+function getHeadTypeLabel(type){
+  if(type==='deceased_husband') return 'زوج متوفي - باسم الزوجة';
+  if(type==='separated') return 'زوجة مفصولة - باسم الزوجة';
+  return 'رب أسرة - زوج موجود';
+}
+
+function getHeadTypeBadge(type){
+  if(type==='deceased_husband') return '<span class="family-badge badge-deceased">متوفي - باسم الزوجة</span>';
+  if(type==='separated') return '<span class="family-badge badge-wife">مفصولة - باسم الزوجة</span>';
+  return '<span class="family-badge badge-normal">زوج موجود</span>';
+}
+
+function openFamilyView(id){
+  const r=DB.records.find(x=>x.id===id);
+  if(!r) return;
+  if(!r.familyMembers) r.familyMembers=[];
+  const membersHtml = r.familyMembers.length ? r.familyMembers.map((m,i)=>`
+    <div class="member-card ${m.isLate?'late':''}">
+      <div class="m-head">
+        <span>${i+1}. ${esc(m.name)} - ${esc(m.relation||'')} ${m.age?`(${m.age} سنة)`:''} ${m.isLate?'<span class="family-badge badge-deceased">⏰ وصل متأخر</span>':''}</span>
+        <div style="display:flex;gap:4px">
+          <button class="btn" style="padding:4px 8px;font-size:11px" onclick="editMember(${r.id},${i})">✏️</button>
+          <button class="btn danger" style="padding:4px 8px;font-size:11px" onclick="deleteMember(${r.id},${i})">🗑️</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">
+        ${m.number?`الرقم: ${esc(m.number)} • `:''}
+        ${m.arrivalDate?`تاريخ الوصول: ${fmtDate(m.arrivalDate)} • `:''}
+        ${m.notes?`ملاحظات: ${esc(m.notes)}`:''}
+      </div>
+    </div>
+  `).join('') : '<div class="empty">لا يوجد أفراد عائلة مضافين بعد - اضغط إضافة فرد</div>';
+
+  const totalExpected = r.totalFamilyCount || r.familyCount || (r.familyMembers.length+1);
+  const actualCount = r.familyMembers.length+1;
+  const remaining = Math.max(0, totalExpected - actualCount);
+  const progressPercent = totalExpected>0 ? Math.round((actualCount/totalExpected)*100) : 100;
+  mBody.innerHTML=`
+    <h3>👨‍👩‍👧‍👦 ${esc(r.name)} ${getHeadTypeBadge(r.headType)}</h3>
+    <div class="card" style="margin-top:10px;background:${remaining===0?'#f0fdf4':'#fffbeb'};border-color:${remaining===0?'#bbf7d0':'#fde68a'}">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b>👥 عدد أفراد الأسرة الكلي: ${totalExpected}</b><span style="font-weight:700;color:${remaining===0?'#059669':'#d97706'}">${actualCount}/${totalExpected} - ${progressPercent}%</span></div>
+      <div class="dist-bar" style="margin-top:6px"><i style="width:${progressPercent}%;background:${remaining===0?'#10b981':'#f59e0b'}"></i></div>
+      <div class="sub" style="margin-top:4px">${remaining===0?'✅ اكتمل عدد أفراد العائلة':`⏳ باقي ${remaining} أفراد لم تتم إضافتهم بعد - يمكنك إضافتهم الآن`}</div>
+    </div>
+    <div class="fgrid" style="margin-top:12px">
+      <div><b>رب الأسرة:</b> ${esc(r.name)}</div>
+      <div><b>نوع رب الأسرة:</b> ${getHeadTypeLabel(r.headType)}</div>
+      <div><b>الرقم:</b> ${esc(r.number||'-')}</div>
+      <div><b>رقم الزائر:</b> ${esc(r.visitor||'-')}</div>
+      <div><b>الحالة:</b> ${esc(r.status)}</div>
+      <div><b>أفراد مضافين حالياً:</b> ${r.familyMembers.length} فرد</div>
+      <div><b>تاريخ التسجيل:</b> ${fmtDate(r.date)} - ${fmtTime(r.time)}</div>
+      <div><b>إجمالي الملفات:</b> ${r.files}</div>
+    </div>
+    ${r.notes?`<div style="margin-top:10px"><b>ملاحظات:</b> ${esc(r.notes)}</div>`:''}
+    <hr style="margin:14px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h4>👥 أفراد العائلة (${r.familyMembers.length})</h4>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn success" id="btnAddMember">➕ إضافة فرد</button>
+        <button class="btn primary" id="btnAddLateMember">⏰ فرد وصل متأخر</button>
+      </div>
+    </div>
+    <div style="max-height:40vh;overflow:auto;margin-top:10px">${membersHtml}</div>
+    <div class="m-actions" style="margin-top:14px">
+      <button class="btn primary" id="btnEditFamily">✏️ تعديل رب الأسرة</button>
+      <button class="btn" id="btnCloseFamily">إغلاق</button>
+    </div>
+  `;
+  overlay.classList.add('show');
+  $('btnCloseFamily').onclick=closeModal;
+  $('btnEditFamily').onclick=()=>{closeModal(); openEdit(r.id);};
+  $('btnAddMember').onclick=()=>{closeModal(); openAddMember(r.id,false);};
+  $('btnAddLateMember').onclick=()=>{closeModal(); openAddMember(r.id,true);};
+}
+
+function openAddMember(familyId, isLate){
+  const r=DB.records.find(x=>x.id===familyId);
+  if(!r) return;
+  mBody.innerHTML=`
+    <h3>${isLate?'⏰ إضافة فرد وصل في وقت آخر':'➕ إضافة فرد عائلة'} - ${esc(r.name)}</h3>
+    <div class="fgrid">
+      <label>اسم الفرد *<input id="mName" placeholder="الاسم الثلاثي"></label>
+      <label>صلة القرابة<select id="mRelation"><option>ابن</option><option>ابنة</option><option>زوجة</option><option>زوج</option><option>أب</option><option>أم</option><option>أخ</option><option>أخت</option><option>حفيد</option><option>حفيدة</option><option>أخرى</option></select></label>
+      <label>العمر<input id="mAge" type="number" placeholder="العمر"></label>
+      <label>الرقم<input id="mNumber" placeholder="رقم الفرد إن وجد"></label>
+      <label>تاريخ الوصول ${isLate?'*':''}<input id="mArrival" type="date" value="${todayISO()}"></label>
+      <label>ملاحظات<input id="mNotes" placeholder="ملاحظات"></label>
+    </div>
+    ${isLate?'<div class="sub" style="margin-top:8px;color:#92400e">⚠️ هذا الفرد وصل في وقت آخر غير وقت تسجيل العائلة الأصلي - سيتم تسجيل تاريخ وصوله منفصل</div>':''}
+    <div class="m-actions">
+      <button class="btn primary" id="mSave">💾 حفظ الفرد</button>
+      <button class="btn" id="mCancel">إلغاء</button>
+    </div>
+  `;
+  overlay.classList.add('show');
+  $('mCancel').onclick=()=>{closeModal(); openFamilyView(familyId);};
+  $('mSave').onclick=()=>{
+    const name=$('mName').value.trim();
+    if(!name){toast('اسم الفرد مطلوب','err'); return;}
+    if(!r.familyMembers) r.familyMembers=[];
+    r.familyMembers.push({
+      name:name,
+      relation:$('mRelation').value,
+      age:$('mAge').value,
+      number:$('mNumber').value.trim(),
+      arrivalDate:$('mArrival').value || todayISO(),
+      notes:$('mNotes').value.trim(),
+      isLate:isLate,
+      addedAt: new Date().toISOString()
+    });
+    r.files = r.familyMembers.length + 1;
+    persist(); refreshAll();
+    closeModal();
+    openFamilyView(familyId);
+    toast('✅ تم إضافة فرد العائلة: '+name);
+  };
+}
+
+function editMember(familyId, memberIndex){
+  const r=DB.records.find(x=>x.id===familyId);
+  if(!r||!r.familyMembers[memberIndex]) return;
+  const m=r.familyMembers[memberIndex];
+  mBody.innerHTML=`
+    <h3>✏️ تعديل فرد - ${esc(m.name)}</h3>
+    <div class="fgrid">
+      <label>اسم الفرد<input id="mName" value="${esc(m.name)}"></label>
+      <label>صلة القرابة<select id="mRelation"><option ${m.relation==='ابن'?'selected':''}>ابن</option><option ${m.relation==='ابنة'?'selected':''}>ابنة</option><option ${m.relation==='زوجة'?'selected':''}>زوجة</option><option ${m.relation==='زوج'?'selected':''}>زوج</option><option ${m.relation==='أب'?'selected':''}>أب</option><option ${m.relation==='أم'?'selected':''}>أم</option></select></label>
+      <label>العمر<input id="mAge" type="number" value="${esc(m.age||'')}"></label>
+      <label>الرقم<input id="mNumber" value="${esc(m.number||'')}"></label>
+      <label>تاريخ الوصول<input id="mArrival" type="date" value="${m.arrivalDate||''}"></label>
+      <label>ملاحظات<input id="mNotes" value="${esc(m.notes||'')}"></label>
+    </div>
+    <div class="m-actions">
+      <button class="btn primary" id="mSave">💾 حفظ</button>
+      <button class="btn" id="mCancel">إلغاء</button>
+    </div>
+  `;
+  overlay.classList.add('show');
+  $('mCancel').onclick=()=>{closeModal(); openFamilyView(familyId);};
+  $('mSave').onclick=()=>{
+    m.name=$('mName').value.trim();
+    m.relation=$('mRelation').value;
+    m.age=$('mAge').value;
+    m.number=$('mNumber').value.trim();
+    m.arrivalDate=$('mArrival').value;
+    m.notes=$('mNotes').value.trim();
+    persist(); refreshAll();
+    closeModal(); openFamilyView(familyId);
+    toast('✅ تم تعديل الفرد');
+  };
+}
+
+function deleteMember(familyId, memberIndex){
+  const r=DB.records.find(x=>x.id===familyId);
+  if(!r) return;
+  showDeleteConfirm('هل أنت متأكد من حذف سجل:<br>«<b>'+r.familyMembers[memberIndex].name+'</b>»؟', function(){
+    r.familyMembers.splice(memberIndex,1);
+    r.files = r.familyMembers.length + 1;
+    persist(); refreshAll();
+    closeModal(); openFamilyView(familyId);
+    toast('تم حذف فرد العائلة');
+  });
+}
+
+// ==================== Original functions patched for family ====================
+function fillRows(tbody,list){
+  if(!list.length){tbody.innerHTML='<tr><td colspan="9" class="empty">لا توجد سجلات مطابقة</td></tr>';return}
+  tbody.innerHTML=list.map((r,i)=>{
+    const membersCount=(r.familyMembers?r.familyMembers.length:0);
+    const totalExpected = r.totalFamilyCount || r.familyCount || (membersCount+1);
+    const actual = membersCount+1;
+    const remaining = Math.max(0, totalExpected - actual);
+    const headBadge=getHeadTypeBadge(r.headType||'normal');
+    // مرتب: كل عمود يحتوي فقط على بياناته
+    return '<tr data-id="'+r.id+'">'
+      +'<td style="font-weight:800;background:#f8fafc">'+(i+1)+'</td>'
+      +'<td class="t-right"><div class="name-cell" style="cursor:pointer;color:#2563eb" onclick="openFamilyView('+r.id+')">'+esc(r.name)+'</div><div style="margin-top:2px">'+headBadge+'</div></td>'
+      +'<td style="font-size:12px">'+getHeadTypeLabel(r.headType||'normal')+'</td>'
+      +'<td><span class="mono number-cell">'+esc(r.number||'-')+'</span></td>'
+      +'<td><span class="mono visitor-cell">'+esc(r.visitor||'-')+'</span></td>'
+      +'<td><span class="st '+(r.status==='مستكمل'?'st-done':r.status==='غير مستكمل'?'st-inc':'st-idle')+'">'+esc(r.status)+'</span></td>'
+      +'<td style="line-height:1.3"><div style="font-weight:800;font-size:14px;color:#0f172a">'+totalExpected+'</div><div style="font-size:11px;color:'+(remaining===0?'#059669':'#d97706')+'">'+actual+' مضاف'+(remaining>0?' • باقي '+remaining:' ✅')+'</div></td>'
+      +'<td style="font-weight:700">'+r.files+'</td>'
+      +'<td><div style="font-size:12px">'+fmtDate(r.date)+'</div><div style="font-size:10px;color:#64748b">'+fmtTime(r.time)+'</div></td>'
+      +'</tr>';
+  }).join('');
+}
+
+let quickMembersList=[];
+
+function renderQuickMembers(){
+  const container=$('quickMembers');
+  if(!container) return;
+  if(!quickMembersList.length){
+    container.innerHTML='<div class="empty" style="padding:8px">لا يوجد أفراد مضافين سريعاً - سيتم إضافة رب الأسرة فقط</div>';
+    return;
+  }
+  container.innerHTML=quickMembersList.map((m,i)=>`
+    <div class="member-card" style="padding:8px;display:flex;justify-content:space-between;align-items:center">
+      <span>${i+1}. ${esc(m.name)} - ${esc(m.relation)} ${m.age?`(${m.age} سنة)`:''}</span>
+      <button class="btn danger" style="padding:2px 8px;font-size:11px" onclick="quickMembersList.splice(${i},1); renderQuickMembers(); updateFamilyCountHint();">🗑️</button>
+    </div>
+  `).join('');
+}
+
+function updateFamilyCountHint(){
+  const totalInput=$('inFamilyCount');
+  if(!totalInput) return;
+  const total=parseInt(totalInput.value)||1;
+  const added=quickMembersList.length+1;
+  const hint=document.getElementById('familyCountHint');
+  if(hint){
+    if(added>total){
+      hint.innerHTML=`<span style="color:#dc2626">⚠️ أضفت ${added} أفراد لكن العدد الكلي ${total} - سيتم تحديث العدد الكلي تلقائياً إلى ${added}</span>`;
+    }else if(added===total){
+      hint.innerHTML=`<span style="color:#059669">✅ اكتمل العدد: ${added}/${total}</span>`;
+    }else{
+      hint.innerHTML=`<span style="color:#d97706">⏳ أضفت ${added} من أصل ${total} - باقي ${total-added} أفراد يمكن إضافتهم لاحقاً</span>`;
+    }
+  }
+}
+
+async function saveName(){
+  const name=$('inName').value.trim();
+  if(!name){toast('يرجى إدخال اسم رب الأسرة.','err');$('inName').focus();return}
+  const totalCount=parseInt($('inFamilyCount')?.value)||1;
+  if(totalCount<1){toast('عدد أفراد الأسرة يجب أن يكون 1 على الأقل','err'); return;}
+  const number=toEn($('inNumber').value).trim()||String(nextNumber()),visitor=toEn($('inVisitor').value).trim(),files=parseInt(toEn($('inFiles').value))||totalCount, headType=$('inHeadType')?$('inHeadType').value:'normal';
+  const actualTotal = Math.max(totalCount, quickMembersList.length+1);
+  DB.records.push({
+    id:DB.nextId++,
+    name,number,visitor,
+    status:$('inStatus').value,
+    files:files,
+    notes:$('inNotes').value.trim(),
+    date:todayISO(),time:nowTime(),
+    headType:headType,
+    familyMembers:quickMembersList.slice(),
+    totalFamilyCount:actualTotal,
+    familyCount:actualTotal
+  });
+  persist();clearAddFields();refreshAll();
+  toast(`✅ تم حفظ رب الأسرة «${name}» - العائلة: ${actualTotal} أفراد (${quickMembersList.length} فرد مضاف الآن) `+getHeadTypeLabel(headType)+' بنجاح')
+}
+
+
+function clearAddFields(){
+  $('inName').value='';$('inVisitor').value='';$('inNotes').value='';$('inFiles').value=1;
+  if($('inHeadType')) $('inHeadType').selectedIndex=0;
+  if($('inFamilyCount')) $('inFamilyCount').value=1;
+  $('inStatus').selectedIndex=0;
+  $('inNumber').value=String(nextNumber());
+  quickMembersList=[];
+  renderQuickMembers();
+  const hint=document.getElementById('familyCountHint');
+  if(hint) hint.innerHTML='';
+  $('inName').focus();
+}
+
+
+async function openEdit(id){
+  const r=DB.records.find(x=>x.id===id);if(!r)return; if(!r.familyMembers) r.familyMembers=[];
+  const totalExpectedEdit = r.totalFamilyCount || r.familyCount || (r.familyMembers.length+1);
+  mBody.innerHTML='<h3>تعديل رب الأسرة</h3><div class="fgrid"><label>اسم رب الأسرة *<input id="eName" value="'+esc(r.name)+'"></label><label>نوع رب الأسرة<select id="eHeadType"><option value="normal" '+(r.headType==='normal'?'selected':'')+'>👨 رب أسرة - زوج موجود</option><option value="deceased_husband" '+(r.headType==='deceased_husband'?'selected':'')+'>👩‍👧‍👦 زوج متوفي - باسم الزوجة</option><option value="separated" '+(r.headType==='separated'?'selected':'')+'>👩 زوجة مفصولة - باسم الزوجة</option></select></label><label>الرقم<input id="eNumber" value="'+esc(r.number)+'"></label><label>رقم الزائر<input id="eVisitor" value="'+esc(r.visitor)+'"></label><label>عدد أفراد الأسرة الكلي<input id="eFamilyCount" type="number" min="1" value="'+totalExpectedEdit+'"></label><label>الحالة<select id="eStatus">'+STATUSES.map(s=>'<option'+(s===r.status?' selected':'')+'>'+s+'</option>').join('')+'</select></label><label>عدد الملفات<input id="eFiles" value="'+r.files+'"></label><label>الملاحظات<input id="eNotes" value="'+esc(r.notes)+'"></label></div><div class="sub" style="margin-top:10px">أفراد مضافين: '+r.familyMembers.length+' - العدد الكلي المتوقع: '+totalExpectedEdit+' - باقي: '+(totalExpectedEdit-(r.familyMembers.length+1))+' - تاريخ التسجيل: '+fmtDate(r.date)+'</div><div class="m-actions"><button class="btn primary" id="eSave">💾 حفظ</button><button class="btn success" id="eViewFamily">👥 عرض العائلة</button><button class="btn" id="eCancel">إلغاء</button></div>';
+  overlay.classList.add('show');
+  $('eCancel').onclick=closeModal;
+  $('eViewFamily').onclick=()=>{closeModal(); openFamilyView(id);};
+  $('eSave').onclick=()=>{
+    const name=$('eName').value.trim(); if(!name){toast('اسم رب الأسرة مطلوب','err');return}
+    r.name=name; r.number=$('eNumber').value.trim(); r.visitor=$('eVisitor').value.trim(); r.status=$('eStatus').value; r.files=parseInt($('eFiles').value)||r.familyMembers.length+1; r.notes=$('eNotes').value.trim(); r.headType=$('eHeadType').value; r.totalFamilyCount=parseInt($('eFamilyCount').value)|| (r.familyMembers.length+1); r.familyCount=r.totalFamilyCount;
+    persist();closeModal();refreshAll();toast('✅ تم حفظ التعديلات');
+  };
+}
+
+function showCtx(x,y){ const ctxCheck=document.getElementById('ctx'); if(ctxCheck){ ctxCheck.innerHTML='<button data-act="view">👥 عرض العائلة</button><button data-act="form" style="background:#e0f2fe;font-weight:800">📋 فتح الاستمارة</button><button data-act="edit">✏️ تعديل رب الأسرة</button><button data-act="addMember">➕ إضافة فرد</button><button data-act="addLate">⏰ فرد وصل متأخر</button><button data-act="delete" style="color:#dc2626">🗑️ حذف العائلة</button><hr>'+STATUSES.map(s=>'<button data-act="st" data-st="'+s+'">🔁 '+s+'</button>').join(''); ctxCheck.style.display='block'; const rc=ctxCheck.getBoundingClientRect(); ctxCheck.style.left=Math.min(x,innerWidth-rc.width-8)+'px'; ctxCheck.style.top=Math.min(y,innerHeight-rc.height-8)+'px'; return; }
+  const c=$('ctx');
+  c.innerHTML='<button data-act="view">👥 عرض العائلة وأفرادها</button><button data-act="edit">✏️ تعديل رب الأسرة</button><button data-act="addMember">➕ إضافة فرد</button><button data-act="addLate">⏰ فرد وصل متأخر</button><button data-act="delete" style="color:#dc2626">🗑️ حذف العائلة</button><hr>'+STATUSES.map(s=>'<button data-act="st" data-st="'+s+'">🔁 '+s+'</button>').join('');
+  c.style.display='block';
+  const rc=c.getBoundingClientRect();
+  c.style.left=Math.min(x,innerWidth-rc.width-8)+'px';
+  c.style.top=Math.min(y,innerHeight-rc.height-8)+'px';
+}
+
+
+function showDeleteConfirm(message, onConfirm){
+  var overlay=document.getElementById('confirmOverlay');
+  var msgEl=document.getElementById('confirmMsg');
+  msgEl.innerHTML=message;
+  overlay.classList.add('show');
+  var btnOk=document.getElementById('btnConfirmDelete');
+  var btnCancel=document.getElementById('btnCancelDelete');
+  function close(){ overlay.classList.remove('show'); btnOk.onclick=null; btnCancel.onclick=null; overlay.onclick=null; }
+  btnCancel.onclick=close;
+  overlay.onclick=function(e){ if(e.target===overlay) close(); };
+  btnOk.onclick=function(){ close(); if(onConfirm) onConfirm(); };
+}
+function showQuickAddModal(){
+  var overlay=document.getElementById('quickAddOverlay');
+  var nameInput=document.getElementById('qName');
+  var relInput=document.getElementById('qRelation');
+  var ageInput=document.getElementById('qAge');
+  var numInput=document.getElementById('qNumber');
+  var dateInput=document.getElementById('qDate');
+  var notesInput=document.getElementById('qNotes');
+  var familyLabel=document.getElementById('qFamilyName');
+  if(familyLabel) familyLabel.textContent = document.getElementById('inName') ? (document.getElementById('inName').value || 'العائلة') : 'العائلة';
+  nameInput.value=''; relInput.value='ابن'; ageInput.value=''; numInput.value=''; notesInput.value=''; dateInput.value=todayISO();
+  overlay.classList.add('show');
+  setTimeout(function(){ nameInput.focus(); },100);
+  function close(){ overlay.classList.remove('show'); }
+  document.getElementById('btnCancelQuick').onclick=close;
+  overlay.onclick=function(e){ if(e.target===overlay) close(); };
+  document.getElementById('btnSaveQuick').onclick=function(){
+    var name=nameInput.value.trim();
+    if(!name){ nameInput.style.borderColor='#dc2626'; nameInput.focus(); return; }
+    nameInput.style.borderColor='#d7dce5';
+    var relation=relInput.value;
+    var age=ageInput.value.trim();
+    var number=numInput.value.trim();
+    var arrivalDate=dateInput.value || todayISO();
+    var notes=notesInput.value.trim();
+    quickMembersList.push({name:name, relation:relation, age:age, number:number, arrivalDate:arrivalDate, notes:notes, isLate:false, addedAt:new Date().toISOString()});
+    renderQuickMembers();
+    updateFamilyCountHint();
+    close();
+    toast('✅ تمت إضافة الفرد: '+name);
+  };
+}
+
+function init(){
+  buildNav();
+  document.querySelectorAll('table.rec thead').forEach(t=>t.innerHTML='<tr><th>م</th><th>👨‍👩‍👧‍👦 رب الأسرة</th><th>📌 نوع رب الأسرة</th><th>🔢 الرقم</th><th>🎫 رقم الزائر</th><th>📊 الحالة</th><th>👥 العدد الكلي</th><th>📁 الملفات</th><th>📅 التاريخ</th></tr>');
+  // wiring for quick members in add page
+  setTimeout(()=>{
+    const btn=$('btnAddQuickMember');
+    const countInput=$('inFamilyCount');
+    if(btn){ btn.onclick=function(){ showQuickAddModal(); }; }
+    if(countInput){
+      countInput.addEventListener('input',()=>{
+        updateFamilyCountHint();
+        // تحديث عدد الملفات تلقائياً
+        const filesInput=$('inFiles');
+        if(filesInput) filesInput.value=countInput.value;
+      });
+      // إضافة عنصر hint
+      const hintDiv=document.createElement('div');
+      hintDiv.id='familyCountHint';
+      hintDiv.style.marginTop='6px';
+      hintDiv.style.fontSize='12px';
+      countInput.parentNode.appendChild(hintDiv);
+    }
+    renderQuickMembers();
+  },500);
+
+  $('recDay').value=todayISO(); $('expDay').value=todayISO();
+  $('recMonth').value=todayISO().slice(0,7); $('expMonth').value=todayISO().slice(0,7);
+  wireEvents();
+  // Smart search hook
+  const rs=$('recSearch'); if(rs){ rs.addEventListener('input', e=>{ const q=e.target.value; const res=getSmartResults(q); renderSmartResults(res,q); if(typeof applyFilters==='function') applyFilters(); }); rs.addEventListener('focus', e=>{ const q=e.target.value; if(q){ const res=getSmartResults(q); renderSmartResults(res,q);} }); }
+  document.addEventListener('click', e=>{ const w=$('searchWrap'); if(w && !w.contains(e.target)){ const b=$('smartResults'); if(b) b.classList.remove('show'); } });
+  if($('gateLogin')) $('gateLogin').onclick=()=>doLogin($('gateEmail').value.trim(),$('gatePass').value.trim(),$('gateMsg'));
+  if($('gateSignup')) $('gateSignup').onclick=()=>doSignup($('gateEmail').value.trim(),$('gatePass').value.trim(),$('gateMsg'));
+  if($('btnLogin')) $('btnLogin').onclick=()=>doLogin($('authUser').value.trim(),$('authPass').value.trim(),$('cloudState'));
+  if($('btnSignUp')) $('btnSignUp').onclick=()=>doSignup($('authUser').value.trim(),$('authPass').value.trim(),$('cloudState'));
+  const doLogout=async()=>{try{if(sbClient) await sbClient.auth.signOut();}catch(e){} localStorage.removeItem('currentUser'); currentUser=null; DB={records:[],nextId:1,settings:{}}; document.getElementById('loginGate').style.display='flex'; document.querySelector('.app').style.display='none'; toast('تم تسجيل الخروج');};
+  if($('btnLogout')) $('btnLogout').onclick=doLogout;
+  if($('btnLogoutSidebar')) $('btnLogoutSidebar').onclick=doLogout;
+  if($('btnLogoutTop')) $('btnLogoutTop').onclick=doLogout;
+  $('btnCloudSave').onclick=()=>{localStorage.setItem('namesManagerSBUrl',SB_URL); localStorage.setItem('namesManagerSBKey',SB_KEY); initSupabase(); toast('✅ تم الحفظ');};
+  $('btnCloudTest').onclick=()=>{cloudLoad(); toast('جاري الاسترجاع...');};
+
+  // تعديل wireEvents للعائلة
+  const oldCtxHandler = $('ctx');
+  if(oldCtxHandler){
+    oldCtxHandler.addEventListener('click',e=>{
+      const b=e.target.closest('button');if(!b)return;
+      const act=b.dataset.act;hideCtx();if(!selId)return;
+      if(act==='view') openFamilyView(selId);
+      else if(act==='edit') openEdit(selId);
+      else if(act==='addMember') openAddMember(selId,false);
+      else if(act==='addLate') openAddMember(selId,true);
+      else if(act==='delete'){
+        const r=DB.records.find(x=>x.id===selId);
+        if(r){
+          showDeleteConfirm('هل تريد حذف العائلة: <b>'+r.name+'</b> مع كل أفرادها ('+(r.familyMembers.length+1)+' فرد)؟', function(){ DB.records=DB.records.filter(x=>x.id!==selId); selId=null; persist(); refreshAll(); toast('تم حذف العائلة'); });
+        }
+      }
+      else if(act==='st'){const r=DB.records.find(x=>x.id===selId);if(r){r.status=b.dataset.st;persist();refreshAll();toast('تم تحديث الحالة ✅')}}
+    });
+  }
+
+  const _oldRS=renderSettings; renderSettings=function(){_oldRS(); cloudSettingsLoad();};
+
+  setTimeout(()=>{
+    window.formRows=[{name:'',gender:'ذكر',day:'',month:'',year:'',education:'ابتدائية',job:''}];
+    try{ renderFormRows(); refreshFamilyDatalist(); }catch(e){}
+    const btnAdd=document.getElementById('btnAddFormRow'); if(btnAdd) btnAdd.onclick=()=>{ formRows.push({name:'',gender:'ذكر',day:'',month:'',year:'',education:'ابتدائية',job:''}); renderFormRows(); updateFormCount(); };
+    const btnClear=document.getElementById('btnClearForm'); if(btnClear) btnClear.onclick=clearForm;
+    const btnSave=document.getElementById('btnSaveForm'); if(btnSave){ btnSave.onclick=saveForm; } const btnPrint=document.getElementById('btnPrintForm'); if(btnPrint) btnPrint.onclick=function(){window.print();}; const btnWord=document.getElementById('btnExportWord'); if(btnWord) btnWord.onclick=exportFormToWord; updateFormCount();
+    const btnLoad=document.getElementById('btnLoadFamily'); if(btnLoad) btnLoad.onclick=()=>{ const v=document.getElementById('fSearch').value.trim(); if(v) loadFamilyToForm(v); else if(window.selId) loadFamilyToForm(window.selId); else toast('اكتب اسم العائلة','err'); };
+    const fSearchInput=document.getElementById('fSearchInput');
+    const btnOpenSearch=document.getElementById('btnOpenSearch');
+    function openFormFromSearch(){
+      const raw=(fSearchInput?.value||'').trim();
+      if(!raw){
+        clearForm();
+        switchPage('form');
+        toast('الاستمارة جاهزة — اكتب بيانات العائلة');
+        return;
+      }
+      const q=raw.toLowerCase();
+      const fam=DB.records.find(r =>
+        String(r.name||'').toLowerCase().includes(q) ||
+        String(r.number||'').toLowerCase()===q ||
+        String(r.id)===q
+      );
+      if(fam){
+        loadFamilyToForm(fam.id);
+      }else{
+        clearForm();
+        const h=document.getElementById('fHeadName');
+        const n=document.getElementById('fFamilyNo');
+        if(h) h.value=raw;
+        if(n) n.value='';
+        switchPage('form');
+        toast('تم فتح استمارة جديدة للعائلة: '+raw);
+      }
+    }
+    if(btnOpenSearch) btnOpenSearch.onclick=openFormFromSearch;
+    if(fSearchInput){
+      fSearchInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); openFormFromSearch(); }});
+    }
+    const fSearch=document.getElementById('fSearch'); if(fSearch){ fSearch.addEventListener('change', e=>{ if(e.target.value.trim()) loadFamilyToForm(e.target.value.trim()); }); fSearch.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); const v=e.target.value.trim(); if(v) loadFamilyToForm(v); } }); }
+    const ctxEl=document.getElementById('ctx');
+    if(ctxEl){
+      ctxEl.addEventListener('click', (e)=>{
+        const b=e.target.closest('button'); if(!b) return;
+        const act=b.dataset.act; const cur=window.selId; if(!cur) return;
+        const c=document.getElementById('ctx'); if(c) c.style.display='none';
+        if(act==='form'){ loadFamilyToForm(cur); }
+      });
+    }
+  },1000);
+  checkUserSession();
+
+  switchPage('dashboard');
+}init();
+</script>
+
+<div id="quickAddOverlay">
+  <div class="quick-box" style="max-width:620px">
+    <div class="quick-title">➕ إضافة فرد عائلة - <span id="qFamilyName"></span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="quick-field"><label>اسم الفرد *</label><input id="qName" placeholder="الاسم الثلاثي"></div>
+      <div class="quick-field"><label>صلة القرابة</label><select id="qRelation"><option value="ابن" selected>ابن</option><option value="ابنة">ابنة</option><option value="زوجة">زوجة</option><option value="أب">أب</option><option value="أم">أم</option><option value="أخ">أخ</option><option value="أخت">أخت</option><option value="زوج">زوج</option></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+      <div class="quick-field"><label>العمر</label><input id="qAge" type="number" placeholder="العمر"></div>
+      <div class="quick-field"><label>الرقم</label><input id="qNumber" placeholder="رقم الفرد إن وجد"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+      <div class="quick-field"><label>تاريخ الوصول</label><input id="qDate" type="date"></div>
+      <div class="quick-field"><label>ملاحظات</label><input id="qNotes" placeholder="ملاحظات"></div>
+    </div>
+    <div class="quick-actions"><button class="btn-save-quick" id="btnSaveQuick">💾 حفظ الفرد</button><button class="btn-cancel-del" id="btnCancelQuick">إلغاء</button></div>
+  </div>
+</div>
+<div id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-title">تأكيد الحذف</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-warn">لا يمكن التراجع عن هذه العملية.</div>
+    <div class="confirm-actions"><button class="btn-delete-final" id="btnConfirmDelete">حذف نهائي</button><button class="btn-cancel-del" id="btnCancelDelete">إلغاء</button></div>
+  </div>
+</div>
+
+</body>
+</html>
